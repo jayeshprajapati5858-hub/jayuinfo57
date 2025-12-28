@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Product, Order, Category, Coupon } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag } from 'lucide-react';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Upload, Image as ImageIcon } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 
 interface AdminDashboardProps {
@@ -66,6 +66,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
     onAddProduct(product);
     setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: 'https://picsum.photos/400/400', stock: 50 });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProduct(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCouponSubmit = (e: React.FormEvent) => {
@@ -372,16 +383,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Product details..."
                   />
                 </div>
+                
+                {/* Image Upload Section */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-                  <input 
-                    type="text"
-                    value={newProduct.image}
-                    onChange={e => setNewProduct({...newProduct, image: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Default random image used if left empty.</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                  <div className="flex gap-4 items-start">
+                    {/* Preview */}
+                    <div className="w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex-shrink-0 flex items-center justify-center relative group">
+                        {newProduct.image ? (
+                           <img src={newProduct.image} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                           <ImageIcon className="text-gray-300" />
+                        )}
+                    </div>
+
+                    <div className="flex-1 space-y-3">
+                        {/* File Input */}
+                        <label className="block w-full">
+                           <input 
+                             type="file" 
+                             accept="image/*"
+                             onChange={handleImageUpload}
+                             className="block w-full text-sm text-gray-500
+                               file:mr-4 file:py-2.5 file:px-4
+                               file:rounded-xl file:border-0
+                               file:text-sm file:font-semibold
+                               file:bg-gray-100 file:text-gray-700
+                               hover:file:bg-gray-200
+                               cursor-pointer
+                             "
+                           />
+                        </label>
+                        <div className="text-center text-xs text-gray-400 font-medium flex items-center gap-2 before:h-[1px] before:flex-1 before:bg-gray-200 after:h-[1px] after:flex-1 after:bg-gray-200">
+                          OR ENTER URL
+                        </div>
+                        {/* URL Input (Fallback) */}
+                        <input 
+                            type="text"
+                            value={newProduct.image}
+                            onChange={e => setNewProduct({...newProduct, image: e.target.value})}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm text-gray-600"
+                        />
+                    </div>
+                  </div>
                 </div>
+
                 <button 
                   type="submit"
                   className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-primary transition-colors flex items-center justify-center gap-2"
