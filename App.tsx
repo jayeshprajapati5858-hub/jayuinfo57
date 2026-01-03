@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import ProductCard from './components/ProductCard';
 import CartSidebar from './components/CartSidebar';
@@ -10,15 +10,75 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLoginModal from './components/AdminLoginModal';
 import OrderTracker from './components/OrderTracker';
 import Toast from './components/Toast';
-import { PRODUCTS, SHOP_NAME, INITIAL_COUPONS } from './constants';
+import Footer from './components/Footer'; 
+import HeroSection from './components/HeroSection';
+import { SHOP_NAME, INITIAL_COUPONS, PRODUCTS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review } from './types';
-import { Zap, Shield, Smartphone, Headphones, Search, Lock } from 'lucide-react';
+import { Search, Filter, ArrowDownUp } from 'lucide-react';
+
+// Firebase Imports
+import { db } from './services/firebase';
+import { collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
 const App: React.FC = () => {
-  // Products State (Admin can add/edit, stock updates)
+  // Data State (Managed by Firebase)
+  // Initialize with PRODUCTS so the site isn't empty while connecting or if connection fails
   const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
+  const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS); 
+
+  // Sync Products from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'products'), orderBy('category')); 
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const productsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
+      
+      if (productsData.length > 0) {
+        setProducts(productsData);
+      } else {
+        console.log("Database is empty, showing demo data or empty state.");
+      }
+    }, (error: any) => {
+      console.error("Error fetching products:", error);
+      if (error.code === 'permission-denied') {
+        showToast("Firebase Console ma Firestore Database chalu karo (Start in Test Mode)");
+      } else {
+        showToast("Database connect nathi thayu. Demo data dekhay che.");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Sync Orders from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'orders'), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ordersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
+      setOrders(ordersData);
+    }, (error) => {
+       console.error("Error fetching orders:", error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Sync Coupons from Firestore (Optional, but good for admin)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'coupons'), (snapshot) => {
+      if (!snapshot.empty) {
+        const couponsData = snapshot.docs.map(doc => doc.data() as Coupon);
+        setCoupons(prev => [...INITIAL_COUPONS, ...couponsData]);
+      }
+    }, (error) => {
+       console.error("Error fetching coupons:", error);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // UI States
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -26,6 +86,7 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [sortBy, setSortBy] = useState<'recommended' | 'price-low' | 'price-high' | 'rating'>('recommended');
   
   // Modal States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -41,7 +102,7 @@ const App: React.FC = () => {
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
-      showToast('Sorry, this item is out of stock!');
+      showToast('Sorry, aa item stock ma nathi!');
       return;
     }
 
@@ -51,7 +112,7 @@ const App: React.FC = () => {
       // Check stock limit
       const currentQty = existing ? existing.quantity : 0;
       if (currentQty + 1 > product.stock) {
-        showToast(`Only ${product.stock} items available in stock!`);
+        showToast(`Stock ma fakt ${product.stock} j items che!`);
         return prev;
       }
 
@@ -60,11 +121,9 @@ const App: React.FC = () => {
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      showToast(`Added ${product.name} to cart`);
+      showToast(`${product.name} cart ma add thayu`);
       return [...prev, { ...product, quantity: 1 }];
     });
-    
-    if (!isCartOpen) setIsCartOpen(true);
   };
 
   const removeFromCart = (id: string) => {
@@ -74,134 +133,283 @@ const App: React.FC = () => {
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
       if (item.id === id) {
-        // Check stock before increasing
+        const newQty = item.quantity + delta;
+        // Check stock
         const product = products.find(p => p.id === id);
-        if (delta > 0 && product && item.quantity >= product.stock) {
-           showToast(`Max stock reached for this item`);
+        if (product && newQty > product.stock) {
+           showToast(`Fakt ${product.stock} items available che!`);
            return item;
         }
-        return { ...item, quantity: Math.max(1, item.quantity + delta) };
+        return { ...item, quantity: Math.max(1, newQty) };
       }
       return item;
     }));
   };
 
-  const handleCheckoutOpen = () => {
-    setIsCartOpen(false);
-    setIsCheckoutOpen(true);
-  };
+  // --------------- FIREBASE ACTIONS ---------------- //
 
-  const handlePlaceOrder = (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number) => {
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      customerName: customerDetails.name,
-      items: [...cartItems],
-      total: total,
-      discount: discount,
-      finalTotal: finalTotal,
-      date: new Date().toISOString(),
-      status: 'Pending',
-      address: `${customerDetails.address}, ${customerDetails.city}`
-    };
-    
-    // Reduce Stock
-    setProducts(prevProducts => prevProducts.map(prod => {
-      const cartItem = cartItems.find(item => item.id === prod.id);
-      if (cartItem) {
-        return { ...prod, stock: Math.max(0, prod.stock - cartItem.quantity) };
+  const handlePlaceOrder = async (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number) => {
+    try {
+      const newOrder: Omit<Order, 'id'> = {
+        customerName: customerDetails.name,
+        address: `${customerDetails.address}, ${customerDetails.city}`,
+        items: cartItems,
+        total: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        discount,
+        finalTotal,
+        date: new Date().toISOString(),
+        status: 'Pending'
+      };
+
+      // 1. Add Order to Firebase
+      await addDoc(collection(db, 'orders'), newOrder);
+
+      // 2. Update Stock in Firebase
+      for (const item of cartItems) {
+        // Only update stock if product exists in DB (not for demo products with numeric IDs '1', '2' etc unless seeded)
+        if (item.id.length > 5) { 
+           const productRef = doc(db, 'products', item.id);
+           const currentProduct = products.find(p => p.id === item.id);
+           if (currentProduct) {
+             const newStock = Math.max(0, currentProduct.stock - item.quantity);
+             await updateDoc(productRef, { stock: newStock });
+           }
+        }
       }
-      return prod;
-    }));
 
-    setOrders(prev => [...prev, newOrder]);
-    setCartItems([]);
-  };
-
-  const handleUpdateOrderStatus = (orderId: string, status: 'Shipped' | 'Rejected') => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status } : order
-    ));
-    showToast(`Order #${orderId.slice(-6)} marked as ${status}`);
-  };
-
-  const handleAddProduct = (newProduct: Product) => {
-    setProducts(prev => [newProduct, ...prev]);
-    showToast('Product added successfully');
-  };
-
-  const handleDeleteProduct = (productId: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      showToast('Product deleted successfully');
+      setCartItems([]);
+      setIsCheckoutOpen(false);
+      setIsCartOpen(false);
+      showToast('Order safalta purvak place thai gayu che!');
+    } catch (error) {
+      console.error("Error placing order: ", error);
+      showToast('Offline Mode: Order place thayu (Database Offline)');
+      setCartItems([]);
+      setIsCheckoutOpen(false);
     }
   };
 
-  const handleUpdateStock = (productId: string, newStock: number) => {
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: newStock } : p));
-  };
-
-  const handleAddReview = (productId: string, review: Review) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === productId) {
-        // Recalculate rating
-        const newReviews = [review, ...p.reviews];
+  const handleAddReview = async (productId: string, review: Review) => {
+    try {
+      if (productId.length <= 5) {
+         showToast("Demo products par review na apay");
+         return;
+      }
+      const productRef = doc(db, 'products', productId);
+      const product = products.find(p => p.id === productId);
+      
+      if (product) {
+        const newReviews = [...product.reviews, review];
         const avgRating = newReviews.reduce((sum, r) => sum + r.rating, 0) / newReviews.length;
-        return { ...p, reviews: newReviews, rating: Number(avgRating.toFixed(1)) };
+        
+        await updateDoc(productRef, {
+          reviews: newReviews,
+          rating: parseFloat(avgRating.toFixed(1))
+        });
+        showToast('Review added!');
       }
-      return p;
-    }));
-    // Update selected product view as well if open
-    if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct(prev => {
-         if (!prev) return null;
-         const newReviews = [review, ...prev.reviews];
-         const avgRating = newReviews.reduce((sum, r) => sum + r.rating, 0) / newReviews.length;
-         return { ...prev, reviews: newReviews, rating: Number(avgRating.toFixed(1)) };
-      });
+    } catch (error) {
+      console.error("Error adding review: ", error);
+      showToast('Database error');
     }
-    showToast('Review submitted! Thank you.');
   };
 
-  const handleAddCoupon = (newCoupon: Coupon) => {
-    setCoupons(prev => [...prev, newCoupon]);
-    showToast('Coupon created successfully');
+  // Admin Functions interacting with Firebase
+  const handleUpdateOrderStatus = async (orderId: string, status: 'Shipped' | 'Rejected') => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, { status });
+      showToast(`Order status: ${status}`);
+    } catch (error) {
+      showToast('Failed to update order (Database Offline)');
+    }
+  };
+
+  const handleAddProduct = async (product: Product) => {
+    try {
+      // Remove ID as Firestore generates it
+      const { id, ...productData } = product; 
+      await addDoc(collection(db, 'products'), productData);
+      showToast('Product safalta purvak add thayu');
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === 'permission-denied') {
+        showToast('Error: Firebase Console ma Firestore Database chalu karo');
+      } else {
+        showToast('Product add na thayu');
+      }
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      if (productId.length <= 5) {
+        showToast("Demo product delete na thay");
+        return;
+      }
+      await deleteDoc(doc(db, 'products', productId));
+      showToast('Product deleted');
+    } catch (error) {
+      showToast('Failed to delete product');
+    }
+  };
+
+  const handleUpdateStock = async (productId: string, newStock: number) => {
+    try {
+      if (productId.length <= 5) return;
+      await updateDoc(doc(db, 'products', productId), { stock: newStock });
+    } catch (error) {
+      showToast('Failed to update stock');
+    }
+  };
+
+  const handleAddCoupon = async (coupon: Coupon) => {
+    try {
+      await addDoc(collection(db, 'coupons'), coupon);
+      showToast('Coupon banavi didhu');
+    } catch (error) {
+       showToast('Coupon na banyu');
+    }
   };
 
   const handleDeleteCoupon = (code: string) => {
     setCoupons(prev => prev.filter(c => c.code !== code));
+    showToast('Coupon delete thayu');
   };
 
-  // Improved filtering logic
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Filter & Sort Products
+  const filteredProducts = products
+    .filter(p => {
+      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            p.description.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'price-low': return a.price - b.price;
+        case 'price-high': return b.price - a.price;
+        case 'rating': return (b.rating || 0) - (a.rating || 0);
+        default: return 0; // Recommended/Default order
+      }
+    });
 
-  const cartItemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const scrollToProducts = () => {
+    document.getElementById('product-grid')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
       <Navbar 
-        cartItemCount={cartItemCount} 
-        onCartClick={() => setIsCartOpen(true)} 
+        cartItemCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+        onCartClick={() => setIsCartOpen(true)}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onOrdersClick={() => setIsOrderTrackerOpen(true)}
         onAdminClick={() => setIsLoginOpen(true)}
       />
 
-      {/* Sidebars & Modals */}
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {/* Hero Section */}
+        {selectedCategory === 'All' && !searchTerm && (
+          <HeroSection onShopNow={scrollToProducts} />
+        )}
+
+        {/* Filters and Search Results */}
+        <div id="product-grid" className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {searchTerm ? `Results for "${searchTerm}"` : selectedCategory === 'All' ? 'All Products' : selectedCategory}
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Showing {filteredProducts.length} items
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+            {/* Sort Dropdown */}
+            <div className="relative group">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg cursor-pointer hover:border-gray-300 transition-colors">
+                <ArrowDownUp size={16} className="text-gray-500" />
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent outline-none text-sm font-medium text-gray-700 cursor-pointer appearance-none pr-4"
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Best Rated</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="h-8 w-[1px] bg-gray-300 hidden md:block"></div>
+
+            {/* Category Pills - Scrollable on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto no-scrollbar">
+              <button 
+                onClick={() => setSelectedCategory('All')}
+                className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === 'All' ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+              >
+                All
+              </button>
+              {Object.values(Category).map(cat => (
+                <button 
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map(product => (
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              onAddToCart={addToCart}
+              onViewDetails={setSelectedProduct}
+            />
+          ))}
+        </div>
+        
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">No products found</h3>
+            <p className="text-gray-500 max-w-xs mx-auto mt-2">
+              We couldn't find any items matching your criteria. Try different keywords or categories.
+            </p>
+            <button 
+              onClick={() => {setSearchTerm(''); setSelectedCategory('All');}}
+              className="mt-6 text-primary font-medium hover:underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+
       <CartSidebar 
         isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)}
-        items={cartItems}
+        onClose={() => setIsCartOpen(false)} 
+        items={cartItems} 
         onRemoveItem={removeFromCart}
         onUpdateQuantity={updateQuantity}
-        onCheckout={handleCheckoutOpen}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          setIsCheckoutOpen(true);
+        }}
       />
 
       <ProductModal 
@@ -220,19 +428,12 @@ const App: React.FC = () => {
         coupons={coupons}
       />
 
-      <OrderTracker 
-        isOpen={isOrderTrackerOpen}
-        onClose={() => setIsOrderTrackerOpen(false)}
-        orders={orders}
-      />
-
       <AdminLoginModal 
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onLogin={() => setIsAdminOpen(true)}
       />
 
-      {/* Admin Dashboard */}
       {isAdminOpen && (
         <AdminDashboard 
           orders={orders}
@@ -248,133 +449,19 @@ const App: React.FC = () => {
         />
       )}
 
-      <Toast 
-        message={toast.message}
-        isVisible={toast.isVisible}
-        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      <OrderTracker 
+        isOpen={isOrderTrackerOpen}
+        onClose={() => setIsOrderTrackerOpen(false)}
+        orders={orders}
       />
 
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 text-white py-16 sm:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl sm:text-6xl font-bold mb-6 tracking-tight">
-              Upgrade Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Mobile Life</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-10">
-              Premium chargers, durable glass guards, and stylish covers. 
-              Quality you can trust, delivered to your doorstep.
-            </p>
-            <button 
-              onClick={() => {
-                const element = document.getElementById('shop-section');
-                element?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-white text-gray-900 px-8 py-3 rounded-full font-bold text-lg hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
-            >
-              Shop Now
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Nav */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { icon: Zap, label: 'Fast Charging', color: 'bg-yellow-500' },
-              { icon: Shield, label: 'Glass Guard', color: 'bg-blue-500' },
-              { icon: Smartphone, label: 'Premium Cases', color: 'bg-purple-500' },
-              { icon: Headphones, label: 'HD Audio', color: 'bg-red-500' },
-            ].map((feature, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 hover:-translate-y-1 transition-transform cursor-pointer">
-                <div className={`${feature.color} p-3 rounded-lg text-white shadow-md`}>
-                  <feature.icon size={24} />
-                </div>
-                <span className="font-semibold text-gray-700">{feature.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Shop Area */}
-        <div id="shop-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-            <h2 className="text-3xl font-bold text-gray-900">Latest Arrivals</h2>
-            
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap justify-center gap-2">
-              <button 
-                onClick={() => setSelectedCategory('All')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === 'All' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-              >
-                All
-              </button>
-              {Object.values(Category).map(cat => (
-                <button 
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === cat ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {filteredProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onAddToCart={addToCart}
-                onViewDetails={setSelectedProduct}
-              />
-            ))}
-          </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <Search size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No products found</h3>
-              <p className="text-gray-500 mt-2">Try adjusting your search or category filter.</p>
-              <button 
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('All');
-                }}
-                className="mt-4 text-primary font-semibold hover:underline"
-              >
-                Clear all filters
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-xl font-bold text-gray-900">{SHOP_NAME}</h3>
-              <p className="text-gray-500 mt-2">Quality Accessories for your Digital Lifestyle.</p>
-            </div>
-            <div className="flex gap-6 items-center">
-              <span className="text-gray-400 text-sm">Follow us:</span>
-              <span className="text-gray-400 hover:text-primary cursor-pointer transition-colors">Instagram</span>
-              <span className="text-gray-400 hover:text-primary cursor-pointer transition-colors">Facebook</span>
-            </div>
-          </div>
-          <div className="mt-8 border-t border-gray-100 pt-8 flex justify-between items-center text-sm text-gray-400">
-             <p>&copy; {new Date().getFullYear()} {SHOP_NAME}. All rights reserved.</p>
-             <button onClick={() => setIsLoginOpen(true)} className="flex items-center gap-1 hover:text-gray-600 transition-colors">
-               <Lock size={14} /> Admin
-             </button>
-          </div>
-        </div>
-      </footer>
-
       <AIAssistant />
+
+      <Toast 
+        message={toast.message} 
+        isVisible={toast.isVisible} 
+        onClose={() => setToast({ ...toast, isVisible: false })} 
+      />
     </div>
   );
 };

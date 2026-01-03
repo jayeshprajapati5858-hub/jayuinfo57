@@ -1,10 +1,16 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCTS } from '../constants';
 
 const apiKey = process.env.API_KEY || '';
 
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey });
+// Safety check: If no API key is present (common in static hosting uploads if not configured), 
+// we avoid crashing the app immediately, but requests will fail.
+let ai: GoogleGenAI | null = null;
+if (apiKey) {
+  ai = new GoogleGenAI({ apiKey });
+}
 
 // Construct a system instruction that knows about our inventory
 const systemInstruction = `
@@ -23,6 +29,11 @@ Rules:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: { role: string, parts: { text: string }[] }[]) => {
+  if (!ai) {
+    console.warn("Gemini API Key is missing.");
+    return "I am currently offline. Please contact the store owner to configure my API key.";
+  }
+
   try {
     const model = 'gemini-3-flash-preview'; 
     
