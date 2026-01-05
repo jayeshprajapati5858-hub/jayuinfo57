@@ -22,19 +22,19 @@ import StyleMatcher from './components/StyleMatcher';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
-import { ArrowDownUp, Sparkles, RefreshCcw, Coins, ShieldCheck, Mail, Send, ArrowRight, Star, QrCode } from 'lucide-react';
+import { ArrowDownUp, Sparkles, RefreshCcw, Coins, ShieldCheck, Mail, Send, ArrowRight, Star, QrCode, Smartphone } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
   // --- STATE MANAGEMENT ---
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [savedForLater, setSavedForLater] = useState<Product[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
   const [userCoins, setUserCoins] = useState<number>(0);
-  const [language, setLanguage] = useState<Language>('gu'); // Default to Gujarati
+  const [language, setLanguage] = useState<Language>('gu'); 
   
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
@@ -66,14 +66,16 @@ const App: React.FC = () => {
   }, [darkMode]);
 
   const loadData = async () => {
-    setIsLoading(true);
+    // We already have DEFAULT_PRODUCTS in state, so UI will show up immediately.
     try {
       const dbProducts = await api.getProducts();
-      setProducts(dbProducts.length > 0 ? dbProducts : DEFAULT_PRODUCTS);
+      if (dbProducts && dbProducts.length > 0) {
+        setProducts(dbProducts);
+      }
       const dbOrders = await api.getOrders();
       setOrders(dbOrders || []);
     } catch (e) {
-      setProducts(DEFAULT_PRODUCTS);
+      console.warn("API Load failed, keeping default products.");
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +100,6 @@ const App: React.FC = () => {
       setProducts(prev => [added, ...prev]);
       showToast("Product added successfully");
     } catch (e) {
-      // Fallback for local testing if API fails
       setProducts(prev => [product, ...prev]);
       showToast("Product added (Local)");
     }
@@ -171,7 +172,6 @@ const App: React.FC = () => {
       status: 'Pending'
     };
     
-    // Attempt to save to API
     api.createOrder(newOrder).catch(() => console.warn("API Create Order failed, saved locally."));
     
     setOrders(prev => [...prev, newOrder]);
@@ -260,7 +260,6 @@ const App: React.FC = () => {
       <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={handleAddReview} language={language} />
       <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} onPlaceOrder={handlePlaceOrder} coupons={coupons} />
       
-      {/* Admin Panel Components */}
       <AdminLoginModal 
         isOpen={isAdminLoginOpen} 
         onClose={() => setIsAdminLoginOpen(false)} 

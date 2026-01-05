@@ -2,11 +2,19 @@
 import { Product, Order, Coupon, Review } from '../types';
 
 // Pointing to the VPS backend server
-// IMPORTANT: If your website is loaded via HTTPS, this HTTP URL might be blocked by browsers (Mixed Content).
 const API_URL = 'http://152.53.240.143:5000/api'; 
 
+const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
 // Helper to handle API errors with timeout support
-const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 5000) => {
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 3000) => {
+  // If we are on HTTPS and trying to call HTTP, browser will block it. 
+  // Return a rejection early to trigger fallback.
+  if (isHttps && url.startsWith('http:')) {
+    console.warn("Mixed Content: Blocking HTTP API call on HTTPS site.");
+    throw new Error("Mixed Content Blocked");
+  }
+
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   
@@ -38,21 +46,23 @@ const handleResponse = async (response: Response) => {
 };
 
 export const api = {
-  // Check Connection with a short 3s timeout
   checkHealth: async () => {
     try {
-      const res = await fetchWithTimeout(`${API_URL}/health`, {}, 3000);
+      const res = await fetchWithTimeout(`${API_URL}/health`, {}, 2000);
       return res.ok;
     } catch (e) {
-      console.warn("VPS Health check failed (Check if your Node.js server is running on port 5000):", e);
       return false;
     }
   },
 
-  // --- Products ---
   getProducts: async (): Promise<Product[]> => {
-    const res = await fetchWithTimeout(`${API_URL}/products`);
-    return handleResponse(res);
+    try {
+      const res = await fetchWithTimeout(`${API_URL}/products`);
+      return await handleResponse(res);
+    } catch (e) {
+      console.warn("Could not fetch products from server, using local data.");
+      throw e;
+    }
   },
 
   addProduct: async (product: Product): Promise<Product> => {
@@ -86,10 +96,13 @@ export const api = {
     return handleResponse(res);
   },
 
-  // --- Orders ---
   getOrders: async (): Promise<Order[]> => {
-    const res = await fetchWithTimeout(`${API_URL}/orders`);
-    return handleResponse(res);
+    try {
+      const res = await fetchWithTimeout(`${API_URL}/orders`);
+      return await handleResponse(res);
+    } catch (e) {
+      return [];
+    }
   },
 
   createOrder: async (order: Order): Promise<Order> => {

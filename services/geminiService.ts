@@ -2,7 +2,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCTS } from '../constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAIInstance = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("API_KEY missing in process.env");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const systemInstruction = `
 You are "MobileHub Assistant", a helpful sales assistant for a mobile accessories shop.
@@ -16,6 +23,9 @@ When a user uploads an outfit photo:
 
 export const getGeminiResponse = async (userMessage: string, history: { role: string, parts: { text: string }[] }[]) => {
   try {
+    const ai = getAIInstance();
+    if (!ai) throw new Error("AI not configured");
+
     const model = 'gemini-3-flash-preview'; 
     const chat = ai.chats.create({
       model: model,
@@ -35,6 +45,9 @@ export const getGeminiResponse = async (userMessage: string, history: { role: st
 
 export const matchOutfitToAccessories = async (base64Image: string) => {
   try {
+    const ai = getAIInstance();
+    if (!ai) return "AI service is currently unavailable.";
+
     const model = 'gemini-3-flash-preview';
     const response = await ai.models.generateContent({
       model: model,
