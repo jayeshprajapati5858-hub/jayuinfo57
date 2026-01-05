@@ -22,7 +22,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
       {/* Content */}
       <div className="relative z-10 px-6 py-16 md:py-24 md:px-12 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-blue-300 border border-primary/30 text-xs font-semibold uppercase tracking-wider mb-6">
-          <Zap size={14} className="fill-blue-300" /> New Arrivals 2024
+          <Zap size={14} className="fill-blue-300" /> New Arrivals 2026
         </div>
         
         <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
@@ -37,12 +37,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
         <div className="flex flex-wrap gap-4">
           <button 
             onClick={onShopNow}
-            className="px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 group"
+            className="px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/30 flex items-center gap-2 group w-full sm:w-auto justify-center"
           >
             Shop Collection <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
           </button>
           
-          <div className="flex items-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all cursor-default border border-white/10">
+          <div className="flex items-center justify-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all cursor-default border border-white/10 w-full sm:w-auto">
             <ShieldCheck className="text-green-400" />
             <span className="font-medium">1 Year Warranty</span>
           </div>

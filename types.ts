@@ -13,6 +13,7 @@ export interface Review {
   rating: number;
   comment: string;
   date: string;
+  image?: string;
 }
 
 export interface Product {
@@ -24,6 +25,7 @@ export interface Product {
   image: string;
   rating: number;
   stock: number;
+  sales: number;
   reviews: Review[];
 }
 
@@ -49,6 +51,7 @@ export interface Order {
   date: string;
   status: OrderStatus;
   address: string;
+  coinsEarned?: number;
 }
 
 export interface Coupon {

@@ -8,6 +8,21 @@ export const INITIAL_COUPONS: Coupon[] = [
   { code: 'SAVE20', discountPercent: 20, isActive: true },
 ];
 
+export const NOTIFICATION_NAMES = [
+  "Jayeshbhai", "Rameshbhai", "Sureshbhai", "Amitbhai", "Priyaben", "Anjaliben", "Hardikbhai", "Parthbhai", 
+  "Jigneshbhai", "Nileshbhai", "Sanjaybhai", "Vijaybhai", "Deepbhai", "Rajbhai", "Karanbhai", "Poojaben", 
+  "Meghaben", "Hetalben", "Bhaveshbhai", "Manishbhai", "Pareshbhai", "Tusharbhai", "Akashbhai", "Ishitaben", 
+  "Kavitaben", "Nehalben", "Darshanbhai", "Chiragbhai", "Mehulbhai", "Alpeshbhai", "Shaileshbhai", "Bharatbhai", 
+  "Kishorbhai", "Ashokbhai", "Shantibhai", "Kokilaben", "Savitaben", "Binduben", "Reenaben", "Seemaben", 
+  "Geetaben", "Babubhai", "Maganbhai", "Chhaganbhai", "Khimjibhai", "Lalitbhai", "Dhirubhai", "Nanubhai", 
+  "Kanubhai", "Pankajbhai"
+];
+
+export const NOTIFICATION_CITIES = [
+  "Ahmedabad", "Surat", "Rajkot", "Vadodara", "Jamnagar", "Bhavnagar", "Gandhinagar", "Junagadh", "Anand", 
+  "Navsari", "Morbi", "Nadiad", "Bharuch", "Porbandar", "Valsad", "Vapi", "Gondal", "Jetpur", "Amreli", "Mehsana"
+];
+
 export const PRODUCTS: Product[] = [
   {
     id: '1',
@@ -18,6 +33,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=1',
     rating: 4.8,
     stock: 15,
+    sales: 124,
     reviews: [
       { id: 'r1', userName: 'Rahul P.', rating: 5, comment: 'Best charger ever! Charges my laptop too.', date: '2023-10-15' }
     ]
@@ -31,6 +47,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=2',
     rating: 4.5,
     stock: 50,
+    sales: 89,
     reviews: []
   },
   {
@@ -42,6 +59,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=3',
     rating: 4.2,
     stock: 100,
+    sales: 250,
     reviews: []
   },
   {
@@ -53,6 +71,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=4',
     rating: 4.6,
     stock: 30,
+    sales: 65,
     reviews: []
   },
   {
@@ -63,7 +82,8 @@ export const PRODUCTS: Product[] = [
     category: Category.CHARGER,
     image: 'https://picsum.photos/400/400?random=5',
     rating: 4.3,
-    stock: 0, // Out of stock example
+    stock: 0,
+    sales: 42,
     reviews: []
   },
   {
@@ -75,6 +95,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=6',
     rating: 4.9,
     stock: 20,
+    sales: 15,
     reviews: []
   },
   {
@@ -86,6 +107,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=7',
     rating: 4.1,
     stock: 45,
+    sales: 78,
     reviews: []
   },
   {
@@ -97,6 +119,7 @@ export const PRODUCTS: Product[] = [
     image: 'https://picsum.photos/400/400?random=8',
     rating: 4.7,
     stock: 8,
+    sales: 110,
     reviews: []
   }
 ];

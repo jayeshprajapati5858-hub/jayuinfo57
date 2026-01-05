@@ -2,15 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCTS } from '../constants';
 
-const apiKey = process.env.API_KEY || '';
-
-// Initialize Gemini Client
-// Safety check: If no API key is present (common in static hosting uploads if not configured), 
-// we avoid crashing the app immediately, but requests will fail.
-let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
-}
+// Always use the named parameter `apiKey` and assume `process.env.API_KEY` is valid.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Construct a system instruction that knows about our inventory
 const systemInstruction = `
@@ -29,25 +22,25 @@ Rules:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: { role: string, parts: { text: string }[] }[]) => {
-  if (!ai) {
-    console.warn("Gemini API Key is missing.");
-    return "I am currently offline. Please contact the store owner to configure my API key.";
-  }
-
   try {
+    // Basic tasks use gemini-3-flash-preview
     const model = 'gemini-3-flash-preview'; 
     
+    // Using chat instance to maintain state
     const chat = ai.chats.create({
       model: model,
       config: {
         systemInstruction: systemInstruction,
         temperature: 0.7,
       },
-      history: history
+      // Ensure history is passed correctly
+      history: history as any
     });
 
-    const result = await chat.sendMessage({ message: userMessage });
-    return result.text;
+    const response = await chat.sendMessage({ message: userMessage });
+    
+    // Access the .text property directly (not as a method)
+    return response.text;
 
   } catch (error) {
     console.error("Gemini API Error:", error);

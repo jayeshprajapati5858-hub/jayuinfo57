@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CartItem, Coupon } from '../types';
-import { X, CheckCircle, CreditCard, Truck, Loader2, Tag } from 'lucide-react';
+import { X, CheckCircle, CreditCard, Truck, Loader2, Tag, AlertCircle } from 'lucide-react';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -41,9 +41,15 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
       setAppliedCoupon(coupon);
       setCouponError('');
     } else {
-      setCouponError('Invalid code');
+      setCouponError('Invalid or expired coupon code');
       setAppliedCoupon(null);
     }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -126,30 +132,65 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
               {/* Coupon Section */}
               <div className="mb-6">
                 <label className="text-xs font-semibold text-gray-500 uppercase mb-2 block">Discount Code</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value)}
-                    placeholder="Enter Code"
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-primary uppercase"
-                  />
-                  <button 
-                    onClick={handleApplyCoupon}
-                    type="button"
-                    className="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary transition-colors"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {appliedCoupon && (
-                  <div className="mt-2 text-green-600 text-xs flex items-center gap-1">
-                    <Tag size={12} /> Coupon applied: {appliedCoupon.discountPercent}% OFF
+                
+                {appliedCoupon ? (
+                  // Applied State
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2 group">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-100 p-2 rounded-lg text-green-600">
+                        <Tag size={20} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-green-900 tracking-wide">{appliedCoupon.code}</span>
+                          <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded font-bold">-{appliedCoupon.discountPercent}%</span>
+                        </div>
+                        <p className="text-xs text-green-700 font-medium mt-0.5">
+                          You saved <span className="font-bold">₹{discountAmount.toLocaleString()}</span>!
+                        </p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleRemoveCoupon}
+                      className="p-2 hover:bg-green-100 rounded-full text-green-600/60 hover:text-red-500 transition-colors"
+                      title="Remove Coupon"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                )}
-                {couponError && (
-                  <div className="mt-2 text-red-500 text-xs font-medium">
-                    {couponError}
+                ) : (
+                  // Input State
+                  <div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={couponCode}
+                        onChange={e => {
+                          setCouponCode(e.target.value);
+                          setCouponError('');
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                        placeholder="Enter Code"
+                        className={`flex-1 px-3 py-2 text-sm border rounded-lg outline-none focus:ring-2 transition-all uppercase ${
+                          couponError 
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50 text-red-900 placeholder:text-red-300' 
+                            : 'border-gray-300 focus:border-primary focus:ring-primary/20'
+                        }`}
+                      />
+                      <button 
+                        onClick={handleApplyCoupon}
+                        type="button"
+                        disabled={!couponCode.trim()}
+                        className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponError && (
+                      <div className="mt-2 text-red-500 text-xs font-medium flex items-center gap-1 animate-in slide-in-from-top-1">
+                        <AlertCircle size={12} /> {couponError}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -160,8 +201,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
                 {appliedCoupon && (
-                   <div className="flex justify-between text-sm text-green-600 font-medium">
-                    <span>Discount</span>
+                   <div className="flex justify-between text-sm text-green-600 font-bold bg-green-50 p-2 rounded-lg -mx-2">
+                    <span className="flex items-center gap-1"><Tag size={12}/> Discount ({appliedCoupon.code})</span>
                     <span>-₹{discountAmount.toLocaleString()}</span>
                   </div>
                 )}
