@@ -22,24 +22,17 @@ import StyleMatcher from './components/StyleMatcher';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
-import { ArrowDownUp, Sparkles, RefreshCcw, Coins, ShieldCheck, Mail, Send, ArrowRight, Star, QrCode, Smartphone } from 'lucide-react';
+import { Home, Search, ShoppingBag, Package, Smartphone, Sparkles, ShieldCheck, QrCode } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
-  // --- STATE MANAGEMENT ---
   const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [savedForLater, setSavedForLater] = useState<Product[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
-  const [userCoins, setUserCoins] = useState<number>(0);
   const [language, setLanguage] = useState<Language>('gu'); 
-  
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-           (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -47,7 +40,6 @@ const App: React.FC = () => {
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
-  const [isWarrantyPortalOpen, setIsWarrantyPortalOpen] = useState(false);
   const [isStyleMatcherOpen, setIsStyleMatcherOpen] = useState(false);
   const [isVerifierOpen, setIsVerifierOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -63,19 +55,17 @@ const App: React.FC = () => {
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
   const loadData = async () => {
-    // We already have DEFAULT_PRODUCTS in state, so UI will show up immediately.
     try {
       const dbProducts = await api.getProducts();
-      if (dbProducts && dbProducts.length > 0) {
-        setProducts(dbProducts);
-      }
+      if (dbProducts?.length > 0) setProducts(dbProducts);
       const dbOrders = await api.getOrders();
       setOrders(dbOrders || []);
     } catch (e) {
-      console.warn("API Load failed, keeping default products.");
+      console.warn("API Load failed.");
     } finally {
       setIsLoading(false);
     }
@@ -83,68 +73,6 @@ const App: React.FC = () => {
 
   useEffect(() => { loadData(); }, []);
 
-  // --- ADMIN HANDLERS ---
-  const handleUpdateOrderStatus = async (orderId: string, status: 'Shipped' | 'Rejected') => {
-    try {
-      await api.updateOrderStatus(orderId, status);
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-      showToast(`Order #${orderId.slice(-6)} ${status}`);
-    } catch (e) {
-      showToast("Error updating order");
-    }
-  };
-
-  const handleAddProduct = async (product: Product) => {
-    try {
-      const added = await api.addProduct(product);
-      setProducts(prev => [added, ...prev]);
-      showToast("Product added successfully");
-    } catch (e) {
-      setProducts(prev => [product, ...prev]);
-      showToast("Product added (Local)");
-    }
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    try {
-      await api.deleteProduct(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-      showToast("Product deleted");
-    } catch (e) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-    }
-  };
-
-  const handleUpdateStock = async (id: string, stock: number) => {
-    try {
-      await api.updateStock(id, stock);
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
-    } catch (e) {
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
-    }
-  };
-
-  const handleAddReview = async (productId: string, review: Review) => {
-    try {
-      await api.addReview(productId, review);
-      setProducts(prev => prev.map(p => p.id === productId ? { ...p, reviews: [review, ...p.reviews] } : p));
-      showToast("Review added");
-    } catch (e) {
-      setProducts(prev => prev.map(p => p.id === productId ? { ...p, reviews: [review, ...p.reviews] } : p));
-    }
-  };
-
-  const handleAddCoupon = (coupon: Coupon) => {
-    setCoupons(prev => [...prev, coupon]);
-    showToast("Coupon added");
-  };
-
-  const handleDeleteCoupon = (code: string) => {
-    setCoupons(prev => prev.filter(c => c.code !== code));
-    showToast("Coupon removed");
-  };
-
-  // --- SHOP HANDLERS ---
   const addToCart = (product: Product, plan?: ProtectionPlan) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -154,37 +82,14 @@ const App: React.FC = () => {
     showToast(`${product.name} Added`);
   };
 
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
-  const updateQuantity = (id: string, delta: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
-  const toggleWishlist = (productId: string) => setWishlist(prev => prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]);
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
-  const handlePlaceOrder = (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number): Order => {
-    const newOrder: Order = {
-      id: `ord-${Date.now()}`,
-      customerName: customerDetails.name,
-      address: `${customerDetails.address}, ${customerDetails.city}`,
-      items: [...cart],
-      total: cart.reduce((sum, item) => sum + ((item.price + (item.protectionPlan?.price || 0)) * item.quantity), 0),
-      discount: discount,
-      finalTotal: finalTotal,
-      date: new Date().toISOString(),
-      status: 'Pending'
-    };
-    
-    api.createOrder(newOrder).catch(() => console.warn("API Create Order failed, saved locally."));
-    
-    setOrders(prev => [...prev, newOrder]);
-    setCart([]);
-    return newOrder;
-  };
-
   const filteredProducts = products
-    .filter(p => (p.name.toLowerCase().includes(searchTerm.toLowerCase())) && (selectedCategory === 'All' || p.category === selectedCategory))
+    .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) && (selectedCategory === 'All' || p.category === selectedCategory))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 pb-20 md:pb-0">
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 
@@ -200,88 +105,103 @@ const App: React.FC = () => {
         onLanguageChange={setLanguage}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
         
-        {/* Next-Gen Feature Entry Points */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* Next-Gen Feature Entry Points - Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div 
               onClick={() => setIsStyleMatcherOpen(true)}
-              className="bg-gradient-to-r from-indigo-600 to-purple-700 p-8 rounded-[40px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl group overflow-hidden relative"
+              className="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl relative overflow-hidden"
             >
-               <Sparkles className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-150 transition-transform duration-1000" size={200} />
-               <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 flex items-center gap-2">
-                 <Sparkles className="text-yellow-300" /> {t.style_matcher}
+               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 flex items-center gap-2">
+                 <Sparkles size={18} className="text-yellow-300" /> {t.style_matcher}
                </h3>
-               <p className="text-sm opacity-80 max-w-xs">{t.upload_outfit}</p>
+               <p className="text-[10px] opacity-80 uppercase tracking-widest">{t.upload_outfit}</p>
             </div>
             <div 
               onClick={() => setIsVerifierOpen(true)}
-              className="bg-gray-900 dark:bg-gray-800 p-8 rounded-[40px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl group overflow-hidden relative"
+              className="bg-gray-900 dark:bg-gray-800 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl relative overflow-hidden"
             >
-               <QrCode className="absolute -right-4 -bottom-4 opacity-10 group-hover:rotate-12 transition-transform duration-700" size={200} />
-               <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 flex items-center gap-2">
-                 <ShieldCheck className="text-green-400" /> {t.verify_product}
+               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 flex items-center gap-2">
+                 <ShieldCheck size={18} className="text-green-400" /> {t.verify_product}
                </h3>
-               <p className="text-sm opacity-80 max-w-xs">Verify your genuine gear instantly.</p>
+               <p className="text-[10px] opacity-80 uppercase tracking-widest">Verify original gear</p>
             </div>
         </div>
 
         <FlashSale />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-          <div>
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2 italic uppercase tracking-tighter">{t.premium_collection}</h2>
+        {/* Filter Scrollable on Mobile */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-             <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto">
-                {['All', ...Object.values(Category)].map(cat => (
-                  <button key={cat} onClick={() => setSelectedCategory(cat as any)} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-primary text-white' : 'text-gray-500'}`}>
-                    {cat}
-                  </button>
-                ))}
-             </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {['All', ...Object.values(Category)].map(cat => (
+              <button 
+                key={cat} 
+                onClick={() => setSelectedCategory(cat as any)} 
+                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${selectedCategory === cat ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-500'}`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
-          {isLoading ? Array(8).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.map(product => <ProductCard key={product.id} product={product} isWishlisted={wishlist.includes(product.id)} onAddToCart={(p) => addToCart(p)} onViewDetails={setSelectedProduct} onToggleWishlist={toggleWishlist} />)}
+        {/* 2-Column Grid on Mobile, 4 on Desktop */}
+        <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+          {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.map(product => (
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              isWishlisted={wishlist.includes(product.id)} 
+              onAddToCart={(p) => addToCart(p)} 
+              onViewDetails={setSelectedProduct} 
+              onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
+            />
+          ))}
         </div>
       </main>
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+            <Home size={20} />
+            <span className="text-[8px] font-bold uppercase">Home</span>
+          </button>
+          <button onClick={() => setIsCartOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors relative">
+            <ShoppingBag size={20} />
+            <span className="text-[8px] font-bold uppercase">Cart</span>
+            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-primary text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-black">{cart.length}</span>}
+          </button>
+          <button onClick={() => setIsOrderTrackerOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+            <Package size={20} />
+            <span className="text-[8px] font-bold uppercase">Orders</span>
+          </button>
+          <button onClick={() => setIsAdminLoginOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+            <Smartphone size={20} />
+            <span className="text-[8px] font-bold uppercase">Admin</span>
+          </button>
+      </div>
 
       <Footer />
 
       <StyleMatcher isOpen={isStyleMatcherOpen} onClose={() => setIsStyleMatcherOpen(false)} language={language} onAddToCart={addToCart} />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
-      
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={savedForLater} onRemoveItem={removeFromCart} onUpdateQuantity={updateQuantity} onSaveForLater={() => {}} onMoveToCart={() => {}} onRemoveSaved={() => {}} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} />
-      <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={toggleWishlist} onAddToCart={(p) => addToCart(p)} />
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
+      <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
-      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={handleAddReview} language={language} />
-      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} onPlaceOrder={handlePlaceOrder} coupons={coupons} />
-      
-      <AdminLoginModal 
-        isOpen={isAdminLoginOpen} 
-        onClose={() => setIsAdminLoginOpen(false)} 
-        onLogin={() => setIsAdminDashboardOpen(true)} 
-      />
-      {isAdminDashboardOpen && (
-        <AdminDashboard 
-          orders={orders}
-          products={products}
-          coupons={coupons}
-          onUpdateOrderStatus={handleUpdateOrderStatus}
-          onAddProduct={handleAddProduct}
-          onDeleteProduct={handleDeleteProduct}
-          onUpdateStock={handleUpdateStock}
-          onAddCoupon={handleAddCoupon}
-          onDeleteCoupon={handleDeleteCoupon}
-          onAddReview={handleAddReview}
-          onClose={() => setIsAdminDashboardOpen(false)}
-        />
-      )}
-
-      <WarrantyPortal isOpen={isWarrantyPortalOpen} onClose={() => setIsWarrantyPortalOpen(false)} />
+      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={()=>{}} language={language} />
+      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} coupons={coupons} onPlaceOrder={(det, disc, tot) => {
+        const order: Order = { id: `ord-${Date.now()}`, customerName: det.name, address: det.address, items: [...cart], total: tot+disc, discount: disc, finalTotal: tot, date: new Date().toISOString(), status: 'Pending' };
+        setOrders(prev => [...prev, order]);
+        setCart([]);
+        return order;
+      }} />
+      <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
+      {isAdminDashboardOpen && <AdminDashboard orders={orders} products={products} coupons={coupons} onUpdateOrderStatus={(id, s) => setOrders(prev => prev.map(o => o.id === id ? {...o, status: s} : o))} onAddProduct={(p) => setProducts(prev => [p, ...prev])} onDeleteProduct={(id) => setProducts(prev => prev.filter(i => i.id !== id))} onUpdateStock={(id, s) => setProducts(prev => prev.map(i => i.id === id ? {...i, stock: s} : i))} onAddCoupon={(c) => setCoupons(prev => [...prev, c])} onDeleteCoupon={(c) => setCoupons(prev => prev.filter(cp => cp.code !== c))} onClose={() => setIsAdminDashboardOpen(false)} />}
       <AIAssistant />
       <LiveSalesNotification />
       <WhatsAppButton />
