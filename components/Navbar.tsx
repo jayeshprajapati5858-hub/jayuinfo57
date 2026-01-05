@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon, Globe } from 'lucide-react';
+import { Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface NavbarProps {
   cartItemCount: number;
@@ -13,6 +15,8 @@ interface NavbarProps {
   onAdminClick: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  language: Language;
+  onLanguageChange: (lang: Language) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -25,8 +29,12 @@ const Navbar: React.FC<NavbarProps> = ({
   onOrdersClick,
   onAdminClick,
   darkMode,
-  onToggleDarkMode
+  onToggleDarkMode,
+  language,
+  onLanguageChange
 }) => {
+  const t = TRANSLATIONS[language];
+
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,7 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({
               <Smartphone size={24} />
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary hidden sm:block">
-              MobileHub
+              {t.shop_name}
             </span>
           </div>
 
@@ -52,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search chargers, cases..."
+                placeholder={t.search_placeholder}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-700 rounded-full leading-5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-gray-750 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all sm:text-sm"
               />
             </div>
@@ -60,6 +68,20 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 border border-gray-200 dark:border-gray-700">
+              <Globe size={14} className="text-gray-500" />
+              <select 
+                value={language} 
+                onChange={(e) => onLanguageChange(e.target.value as Language)}
+                className="bg-transparent text-[10px] font-bold uppercase tracking-widest outline-none dark:text-white cursor-pointer"
+              >
+                <option value="en" className="text-black">EN</option>
+                <option value="gu" className="text-black">GU</option>
+                <option value="hi" className="text-black">HI</option>
+              </select>
+            </div>
+
             {/* Theme Toggle */}
             <button 
               onClick={onToggleDarkMode}
@@ -84,7 +106,7 @@ const Navbar: React.FC<NavbarProps> = ({
               className="hidden sm:flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             >
               <Package size={18} />
-              <span>Orders</span>
+              <span>{t.orders}</span>
             </button>
             <button 
               onClick={onOrdersClick}

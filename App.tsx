@@ -13,13 +13,16 @@ import OrderTracker from './components/OrderTracker';
 import Toast from './components/Toast';
 import Footer from './components/Footer'; 
 import HeroSection from './components/HeroSection';
+import FlashSale from './components/FlashSale';
 import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
 import WarrantyPortal from './components/WarrantyPortal';
-import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review } from './types';
-import { ArrowDownUp, Sparkles, RefreshCcw, Coins, ShieldCheck } from 'lucide-react';
+import StyleMatcher from './components/StyleMatcher';
+import AuthenticityVerifier from './components/AuthenticityVerifier';
+import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
+import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
+import { ArrowDownUp, Sparkles, RefreshCcw, Coins, ShieldCheck, Mail, Send, ArrowRight, Star, QrCode } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
@@ -31,431 +34,258 @@ const App: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
   const [userCoins, setUserCoins] = useState<number>(0);
+  const [language, setLanguage] = useState<Language>('gu'); // Default to Gujarati
   
-  // Theme State
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
 
-  // System State
-  const [isOnlineMode, setIsOnlineMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // UI States
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isWarrantyPortalOpen, setIsWarrantyPortalOpen] = useState(false);
+  const [isStyleMatcherOpen, setIsStyleMatcherOpen] = useState(false);
+  const [isVerifierOpen, setIsVerifierOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  
-  // Filtering & Sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
-
-  // Notifications
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
 
-  // --- DARK MODE SYNC ---
+  const t = TRANSLATIONS[language];
+
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+    if (darkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // --- INITIAL DATA LOADING ---
-  const loadData = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      const isConnected = await api.checkHealth();
-      
-      if (isConnected) {
-        setIsOnlineMode(true);
-        try {
-          const [dbProducts, dbOrders] = await Promise.all([
-            api.getProducts(),
-            api.getOrders()
-          ]);
-          
-          if (dbProducts && dbProducts.length > 0) {
-             setProducts(dbProducts);
-          } else {
-             setProducts(DEFAULT_PRODUCTS);
-          }
-          setOrders(dbOrders || []);
-        } catch (fetchErr) {
-          throw new Error("Data fetch error");
-        }
-      } else {
-        throw new Error("Backend not reachable");
-      }
-    } catch (error) {
-      setIsOnlineMode(false);
-      const savedProducts = localStorage.getItem('products');
-      if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
-      } else {
-        setProducts(DEFAULT_PRODUCTS);
-        localStorage.setItem('products', JSON.stringify(DEFAULT_PRODUCTS));
-      }
-      const savedOrders = localStorage.getItem('orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
+      const dbProducts = await api.getProducts();
+      setProducts(dbProducts.length > 0 ? dbProducts : DEFAULT_PRODUCTS);
+      const dbOrders = await api.getOrders();
+      setOrders(dbOrders || []);
+    } catch (e) {
+      setProducts(DEFAULT_PRODUCTS);
     } finally {
-      // Small artificial delay to show off skeletons nicely
-      setTimeout(() => setIsLoading(false), 800);
+      setIsLoading(false);
     }
-
-    const savedCoupons = localStorage.getItem('coupons');
-    if (savedCoupons) setCoupons(JSON.parse(savedCoupons));
-
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) setCart(JSON.parse(savedCart));
-
-    const savedWishlist = localStorage.getItem('wishlist');
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-
-    const savedSaved = localStorage.getItem('savedForLater');
-    if (savedSaved) setSavedForLater(JSON.parse(savedSaved));
-
-    const savedCoins = localStorage.getItem('userCoins');
-    if (savedCoins) setUserCoins(Number(savedCoins));
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  // --- PERSISTENCE ---
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    localStorage.setItem('wishlist', JSON.stringify(wishlist));
-    localStorage.setItem('coupons', JSON.stringify(coupons));
-    localStorage.setItem('savedForLater', JSON.stringify(savedForLater));
-    localStorage.setItem('userCoins', userCoins.toString());
-    
-    if (!isOnlineMode) {
-      localStorage.setItem('products', JSON.stringify(products));
-      localStorage.setItem('orders', JSON.stringify(orders));
+  // --- ADMIN HANDLERS ---
+  const handleUpdateOrderStatus = async (orderId: string, status: 'Shipped' | 'Rejected') => {
+    try {
+      await api.updateOrderStatus(orderId, status);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      showToast(`Order #${orderId.slice(-6)} ${status}`);
+    } catch (e) {
+      showToast("Error updating order");
     }
-  }, [products, orders, coupons, cart, wishlist, savedForLater, userCoins, isOnlineMode]);
-
-  // --- ACTIONS ---
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setIsToastVisible(true);
   };
 
-  const handleSaveForLater = (item: CartItem) => {
-    setCart(prev => prev.filter(i => i.id !== item.id));
-    setSavedForLater(prev => {
-        if (prev.find(i => i.id === item.id)) return prev;
-        return [...prev, item];
-    });
-    showToast('Saved for later!');
-  };
-
-  const handleMoveToCart = (product: Product) => {
-    setSavedForLater(prev => prev.filter(i => i.id !== product.id));
-    addToCart(product);
-  };
-
-  const handlePlaceOrder = async (customerDetails: { name: string, address: string, city: string }, discount: number, finalTotal: number) => {
-    const earned = Math.floor(finalTotal * 0.05);
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      customerName: customerDetails.name,
-      address: `${customerDetails.address}, ${customerDetails.city}`,
-      items: cart,
-      total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      discount,
-      finalTotal,
-      date: new Date().toISOString(),
-      status: 'Pending',
-      coinsEarned: earned
-    };
-
-    setOrders(prev => [...prev, newOrder]);
-    setUserCoins(prev => prev + earned);
-    
-    if (isOnlineMode) {
-      try {
-        await api.createOrder(newOrder);
-        for (const item of cart) {
-             const product = products.find(p => p.id === item.id);
-             if (product) {
-                 await api.updateStock(item.id, Math.max(0, product.stock - item.quantity));
-             }
-        }
-        loadData(true);
-      } catch (e) { showToast('Sync error, saved locally.'); }
-    } else {
-       setProducts(prev => prev.map(p => {
-            const cartItem = cart.find(c => c.id === p.id);
-            return cartItem ? { ...p, stock: Math.max(0, p.stock - cartItem.quantity), sales: (p.sales || 0) + cartItem.quantity } : p;
-       }));
+  const handleAddProduct = async (product: Product) => {
+    try {
+      const added = await api.addProduct(product);
+      setProducts(prev => [added, ...prev]);
+      showToast("Product added successfully");
+    } catch (e) {
+      // Fallback for local testing if API fails
+      setProducts(prev => [product, ...prev]);
+      showToast("Product added (Local)");
     }
-
-    setCart([]);
-    setIsCheckoutOpen(false);
-    setIsCartOpen(false);
-    showToast(`Order success! Earned ${earned} coins.`);
   };
 
-  const toggleWishlist = (productId: string) => {
-    setWishlist(prev => {
-      const exists = prev.includes(productId);
-      showToast(exists ? 'Removed from Wishlist' : 'Added to Wishlist');
-      return exists ? prev.filter(id => id !== productId) : [...prev, productId];
-    });
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await api.deleteProduct(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+      showToast("Product deleted");
+    } catch (e) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+    }
   };
 
-  const addToCart = (product: Product) => {
-    if (product.stock === 0) return;
+  const handleUpdateStock = async (id: string, stock: number) => {
+    try {
+      await api.updateStock(id, stock);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
+    } catch (e) {
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock } : p));
+    }
+  };
+
+  const handleAddReview = async (productId: string, review: Review) => {
+    try {
+      await api.addReview(productId, review);
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, reviews: [review, ...p.reviews] } : p));
+      showToast("Review added");
+    } catch (e) {
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, reviews: [review, ...p.reviews] } : p));
+    }
+  };
+
+  const handleAddCoupon = (coupon: Coupon) => {
+    setCoupons(prev => [...prev, coupon]);
+    showToast("Coupon added");
+  };
+
+  const handleDeleteCoupon = (code: string) => {
+    setCoupons(prev => prev.filter(c => c.code !== code));
+    showToast("Coupon removed");
+  };
+
+  // --- SHOP HANDLERS ---
+  const addToCart = (product: Product, plan?: ProtectionPlan) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        if (existing.quantity >= product.stock) {
-          showToast(`Only ${product.stock} available!`);
-          return prev;
-        }
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prev, { ...product, quantity: 1 }];
+      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1, protectionPlan: plan || item.protectionPlan } : item);
+      return [...prev, { ...product, quantity: 1, protectionPlan: plan }];
     });
-    showToast(`${product.name} added!`);
-  };
-
-  const updateCartQuantity = (id: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.id === id) {
-        const product = products.find(p => p.id === id);
-        const maxStock = product ? product.stock : 100;
-        const newQty = Math.max(1, Math.min(item.quantity + delta, maxStock));
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    }));
+    showToast(`${product.name} Added`);
   };
 
   const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
+  const updateQuantity = (id: string, delta: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+  const toggleWishlist = (productId: string) => setWishlist(prev => prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]);
+  const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
-  // --- ADMIN & DATA HANDLERS ---
-
-  // Fix: Added handleUpdateOrderStatus
-  const handleUpdateOrderStatus = async (orderId: string, status: 'Shipped' | 'Rejected') => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-    if (isOnlineMode) {
-      try {
-        await api.updateOrderStatus(orderId, status);
-      } catch (e) {
-        showToast('Sync error, updated locally.');
-      }
-    }
-    showToast(`Order marked as ${status}`);
+  const handlePlaceOrder = (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number): Order => {
+    const newOrder: Order = {
+      id: `ord-${Date.now()}`,
+      customerName: customerDetails.name,
+      address: `${customerDetails.address}, ${customerDetails.city}`,
+      items: [...cart],
+      total: cart.reduce((sum, item) => sum + ((item.price + (item.protectionPlan?.price || 0)) * item.quantity), 0),
+      discount: discount,
+      finalTotal: finalTotal,
+      date: new Date().toISOString(),
+      status: 'Pending'
+    };
+    
+    // Attempt to save to API
+    api.createOrder(newOrder).catch(() => console.warn("API Create Order failed, saved locally."));
+    
+    setOrders(prev => [...prev, newOrder]);
+    setCart([]);
+    return newOrder;
   };
 
-  // Fix: Added handleAddProduct
-  const handleAddProduct = async (product: Product) => {
-    setProducts(prev => [product, ...prev]);
-    if (isOnlineMode) {
-      try {
-        await api.addProduct(product);
-      } catch (e) {
-        showToast('Sync error, added locally.');
-      }
-    }
-    showToast(`${product.name} added to inventory`);
-  };
-
-  // Fix: Added handleDeleteProduct
-  const handleDeleteProduct = async (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
-    if (isOnlineMode) {
-      try {
-        await api.deleteProduct(productId);
-      } catch (e) {
-        showToast('Sync error, removed locally.');
-      }
-    }
-    showToast('Product removed');
-  };
-
-  // Fix: Added handleUpdateStock
-  const handleUpdateStock = async (productId: string, newStock: number) => {
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: newStock } : p));
-    if (isOnlineMode) {
-      try {
-        await api.updateStock(productId, newStock);
-      } catch (e) {
-        showToast('Sync error, updated locally.');
-      }
-    }
-  };
-
-  // Fix: Added handleAddCoupon
-  const handleAddCoupon = (coupon: Coupon) => {
-    setCoupons(prev => [...prev, coupon]);
-    showToast(`Coupon ${coupon.code} added`);
-  };
-
-  // Fix: Added handleDeleteCoupon
-  const handleDeleteCoupon = (code: string) => {
-    setCoupons(prev => prev.filter(c => c.code !== code));
-    showToast('Coupon removed');
-  };
-
-  // Fix: Added handleAddReview
-  const handleAddReview = async (productId: string, review: Review) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === productId) {
-        const newReviews = [...p.reviews, review];
-        const newRating = Number((newReviews.reduce((sum, r) => sum + r.rating, 0) / newReviews.length).toFixed(1));
-        return { ...p, reviews: newReviews, rating: newRating };
-      }
-      return p;
-    }));
-
-    if (isOnlineMode) {
-      try {
-        await api.addReview(productId, review);
-      } catch (e) {
-        showToast('Sync error, review added locally.');
-      }
-    }
-    showToast('Review added!');
-  };
-
-  // --- FILTERING ---
   const filteredProducts = products
-    .filter(p => (selectedCategory === 'All' || p.category === selectedCategory) && p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'price_asc') return a.price - b.price;
-      if (sortBy === 'price_desc') return b.price - a.price;
-      return b.rating - a.rating;
-    });
-
-  const categories = ['All', ...Object.values(Category)];
+    .filter(p => (p.name.toLowerCase().includes(searchTerm.toLowerCase())) && (selectedCategory === 'All' || p.category === selectedCategory))
+    .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
   return (
-    <div className="min-h-screen pb-20 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
       <Navbar 
-        cartItemCount={cart.length}
-        wishlistItemCount={wishlist.length}
-        onCartClick={() => setIsCartOpen(true)}
-        onWishlistClick={() => setIsWishlistOpen(true)}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onOrdersClick={() => setIsOrderTrackerOpen(true)}
-        onAdminClick={() => setIsAdminLoginOpen(true)}
-        darkMode={darkMode}
+        cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
+        wishlistItemCount={wishlist.length} 
+        onCartClick={() => setIsCartOpen(true)} 
+        onWishlistClick={() => setIsWishlistOpen(true)} 
+        searchTerm={searchTerm} 
+        onSearchChange={setSearchTerm} 
+        onOrdersClick={() => setIsOrderTrackerOpen(true)} 
+        onAdminClick={() => setIsAdminLoginOpen(true)} 
+        darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
+        language={language}
+        onLanguageChange={setLanguage}
       />
 
-      {/* Floating Loyalty Indicator */}
-      <div className="fixed top-20 right-4 z-40 hidden lg:flex items-center gap-2 bg-white dark:bg-gray-800 p-2 pl-4 rounded-full border border-gray-100 dark:border-gray-700 shadow-xl group cursor-help overflow-hidden">
-          <div className="text-right">
-              <p className="text-[10px] text-gray-500 leading-none">Your Balance</p>
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{userCoins}</p>
-          </div>
-          <div className="p-2 bg-accent/20 text-accent rounded-full animate-pulse group-hover:animate-bounce">
-              <Coins size={20} />
-          </div>
-          <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <HeroSection onShopNow={() => document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' })} />
-
-        {/* Brand Perks Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 mx-2">
-            <button onClick={() => setIsWarrantyPortalOpen(true)} className="flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group">
-                <div className="p-2 bg-primary/10 text-primary rounded-xl group-hover:scale-110 transition-transform"><ShieldCheck size={20} /></div>
-                <div className="text-left"><p className="text-xs font-bold text-gray-900 dark:text-white">Register Warranty</p><p className="text-[10px] text-gray-500">1 Year Protection</p></div>
-            </button>
-            <div className="flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <div className="p-2 bg-accent/10 text-accent rounded-xl"><Coins size={20} /></div>
-                <div className="text-left"><p className="text-xs font-bold text-gray-900 dark:text-white">Earn Rewards</p><p className="text-[10px] text-gray-500">5% Cashback Points</p></div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
+        
+        {/* Next-Gen Feature Entry Points */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div 
+              onClick={() => setIsStyleMatcherOpen(true)}
+              className="bg-gradient-to-r from-indigo-600 to-purple-700 p-8 rounded-[40px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl group overflow-hidden relative"
+            >
+               <Sparkles className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-150 transition-transform duration-1000" size={200} />
+               <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 flex items-center gap-2">
+                 <Sparkles className="text-yellow-300" /> {t.style_matcher}
+               </h3>
+               <p className="text-sm opacity-80 max-w-xs">{t.upload_outfit}</p>
             </div>
-            <div className="hidden md:flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <div className="p-2 bg-green-100 text-green-600 rounded-xl"><RefreshCcw size={20} /></div>
-                <div className="text-left"><p className="text-xs font-bold text-gray-900 dark:text-white">Easy Returns</p><p className="text-[10px] text-gray-500">7-Day Exchange</p></div>
-            </div>
-            <div className="hidden md:flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                <div className="p-2 bg-purple-100 text-purple-600 rounded-xl"><Sparkles size={20} /></div>
-                <div className="text-left"><p className="text-xs font-bold text-gray-900 dark:text-white">Premium Quality</p><p className="text-[10px] text-gray-500">Verified Products</p></div>
+            <div 
+              onClick={() => setIsVerifierOpen(true)}
+              className="bg-gray-900 dark:bg-gray-800 p-8 rounded-[40px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl group overflow-hidden relative"
+            >
+               <QrCode className="absolute -right-4 -bottom-4 opacity-10 group-hover:rotate-12 transition-transform duration-700" size={200} />
+               <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 flex items-center gap-2">
+                 <ShieldCheck className="text-green-400" /> {t.verify_product}
+               </h3>
+               <p className="text-sm opacity-80 max-w-xs">Verify your genuine gear instantly.</p>
             </div>
         </div>
 
-        <div id="shop" className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 px-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="text-primary" size={20} /> Best Sellers
-            </h2>
-             <div className="relative w-full md:w-auto">
-               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full md:w-auto pl-4 pr-10 py-2.5 bg-white dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer shadow-sm">
-                 <option value="rating">Top Rated</option>
-                 <option value="price_asc">Price: Low to High</option>
-                 <option value="price_desc">Price: High to Low</option>
-               </select>
-               <ArrowDownUp size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
+        <FlashSale />
+
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2 italic uppercase tracking-tighter">{t.premium_collection}</h2>
           </div>
-          
-          <div className="sticky top-16 z-30 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm py-2 mb-6 -mx-2 px-2 sm:mx-0 sm:px-0">
-            <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide no-scrollbar touch-pan-x">
-              {categories.map((cat) => (
-                <button key={cat} onClick={() => setSelectedCategory(cat as any)} className={`whitespace-nowrap px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 transform ${selectedCategory === cat ? 'bg-gray-900 dark:bg-primary text-white shadow-lg scale-105' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50'}`}>
-                  {cat === 'All' ? 'Discover All' : cat}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+             <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto">
+                {['All', ...Object.values(Category)].map(cat => (
+                  <button key={cat} onClick={() => setSelectedCategory(cat as any)} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-primary text-white' : 'text-gray-500'}`}>
+                    {cat}
+                  </button>
+                ))}
+             </div>
           </div>
         </div>
 
-        {/* Product Grid / Skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {isLoading ? (
-            [...Array(8)].map((_, i) => <SkeletonProduct key={i} />)
-          ) : (
-            filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} isWishlisted={wishlist.includes(product.id)} onAddToCart={addToCart} onViewDetails={setSelectedProduct} onToggleWishlist={toggleWishlist} />
-            ))
-          )}
+        <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+          {isLoading ? Array(8).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.map(product => <ProductCard key={product.id} product={product} isWishlisted={wishlist.includes(product.id)} onAddToCart={(p) => addToCart(p)} onViewDetails={setSelectedProduct} onToggleWishlist={toggleWishlist} />)}
         </div>
       </main>
 
       <Footer />
+
+      <StyleMatcher isOpen={isStyleMatcherOpen} onClose={() => setIsStyleMatcherOpen(false)} language={language} onAddToCart={addToCart} />
+      <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       
-      <CartSidebar 
-        isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} 
-        savedItems={savedForLater} onRemoveItem={removeFromCart} onUpdateQuantity={updateCartQuantity} onCheckout={() => setIsCheckoutOpen(true)}
-        onSaveForLater={handleSaveForLater} onMoveToCart={handleMoveToCart} onRemoveSaved={(id) => setSavedForLater(prev => prev.filter(i => i.id !== id))}
-      />
-
-      <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={toggleWishlist} onAddToCart={addToCart} />
-      <ProductModal isOpen={!!selectedProduct} onClose={() => setSelectedProduct(null)} product={selectedProduct} onAddToCart={addToCart} onAddReview={handleAddReview} />
-      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} onPlaceOrder={handlePlaceOrder} coupons={coupons} />
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={savedForLater} onRemoveItem={removeFromCart} onUpdateQuantity={updateQuantity} onSaveForLater={() => {}} onMoveToCart={() => {}} onRemoveSaved={() => {}} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} />
+      <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={toggleWishlist} onAddToCart={(p) => addToCart(p)} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
-      <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
-      <WarrantyPortal isOpen={isWarrantyPortalOpen} onClose={() => setIsWarrantyPortalOpen(false)} />
-
+      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={handleAddReview} language={language} />
+      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} onPlaceOrder={handlePlaceOrder} coupons={coupons} />
+      
+      {/* Admin Panel Components */}
+      <AdminLoginModal 
+        isOpen={isAdminLoginOpen} 
+        onClose={() => setIsAdminLoginOpen(false)} 
+        onLogin={() => setIsAdminDashboardOpen(true)} 
+      />
       {isAdminDashboardOpen && (
-        <AdminDashboard orders={orders} products={products} coupons={coupons} onUpdateOrderStatus={handleUpdateOrderStatus} onAddProduct={handleAddProduct} onDeleteProduct={handleDeleteProduct} onUpdateStock={handleUpdateStock} onAddCoupon={handleAddCoupon} onDeleteCoupon={handleDeleteCoupon} onAddReview={handleAddReview} onClose={() => setIsAdminDashboardOpen(false)} />
+        <AdminDashboard 
+          orders={orders}
+          products={products}
+          coupons={coupons}
+          onUpdateOrderStatus={handleUpdateOrderStatus}
+          onAddProduct={handleAddProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onUpdateStock={handleUpdateStock}
+          onAddCoupon={handleAddCoupon}
+          onDeleteCoupon={handleDeleteCoupon}
+          onAddReview={handleAddReview}
+          onClose={() => setIsAdminDashboardOpen(false)}
+        />
       )}
 
+      <WarrantyPortal isOpen={isWarrantyPortalOpen} onClose={() => setIsWarrantyPortalOpen(false)} />
       <AIAssistant />
-      <WhatsAppButton />
       <LiveSalesNotification />
+      <WhatsAppButton />
       <Toast message={toastMessage} isVisible={isToastVisible} onClose={() => setIsToastVisible(false)} />
     </div>
   );
