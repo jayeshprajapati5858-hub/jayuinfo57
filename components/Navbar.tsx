@@ -91,14 +91,7 @@ const Navbar: React.FC<NavbarProps> = ({
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            {/* Admin Button */}
-             <button 
-              onClick={onAdminClick}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-              title="Admin Panel"
-            >
-              <Lock size={20} />
-            </button>
+            {/* Admin Button Removed for Hidden Access Security */}
 
             {/* Orders Button */}
             <button 

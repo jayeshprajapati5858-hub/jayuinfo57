@@ -21,7 +21,7 @@ import WarrantyPortal from './components/WarrantyPortal';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
-import { Home, Search, ShoppingBag, Package, Smartphone, Sparkles, ShieldCheck, QrCode } from 'lucide-react';
+import { Home, Search, ShoppingBag, Package, Smartphone, ShieldCheck } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
@@ -49,6 +49,20 @@ const App: React.FC = () => {
   const [isToastVisible, setIsToastVisible] = useState(false);
 
   const t = TRANSLATIONS[language];
+
+  // Logic to detect Secret Admin URL
+  useEffect(() => {
+    const checkSecretPath = () => {
+      // Check if URL ends with /Adminjayu or Adminjayu is in the hash
+      if (window.location.pathname.endsWith('/Adminjayu') || window.location.hash === '#Adminjayu') {
+        setIsAdminLoginOpen(true);
+      }
+    };
+    
+    checkSecretPath();
+    window.addEventListener('popstate', checkSecretPath);
+    return () => window.removeEventListener('popstate', checkSecretPath);
+  }, []);
 
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
@@ -96,7 +110,7 @@ const App: React.FC = () => {
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
         onOrdersClick={() => setIsOrderTrackerOpen(true)} 
-        onAdminClick={() => setIsAdminLoginOpen(true)} 
+        onAdminClick={() => {}} // Disabled direct click
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
@@ -106,7 +120,6 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
         
-        {/* Verification Card - Full Width */}
         <div className="mb-8">
             <div 
               onClick={() => setIsVerifierOpen(true)}
@@ -131,7 +144,6 @@ const App: React.FC = () => {
 
         <FlashSale />
 
-        {/* Filter Scrollable on Mobile */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
@@ -149,7 +161,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* 2-Column Grid on Mobile, 4 on Desktop */}
         <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
           {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.map(product => (
             <ProductCard 
@@ -164,7 +175,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* MOBILE BOTTOM NAVIGATION - Admin Button Removed for Security */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Home size={20} />
@@ -179,9 +190,9 @@ const App: React.FC = () => {
             <Package size={20} />
             <span className="text-[8px] font-bold uppercase">Orders</span>
           </button>
-          <button onClick={() => setIsAdminLoginOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+          <button onClick={() => setIsVerifierOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Smartphone size={20} />
-            <span className="text-[8px] font-bold uppercase">Admin</span>
+            <span className="text-[8px] font-bold uppercase">Verify</span>
           </button>
       </div>
 
