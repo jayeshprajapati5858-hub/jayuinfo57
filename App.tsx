@@ -43,7 +43,6 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
@@ -57,7 +56,6 @@ const App: React.FC = () => {
       const hash = window.location.hash.toLowerCase();
       const search = window.location.search.toLowerCase();
       
-      // Matches /Adminjayu, #Adminjayu, or ?admin
       if (
         path.endsWith('/adminjayu') || 
         hash === '#adminjayu' || 
@@ -68,7 +66,6 @@ const App: React.FC = () => {
     };
     
     checkSecretPath();
-    // Listen for changes without page reload
     window.addEventListener('hashchange', checkSecretPath);
     window.addEventListener('popstate', checkSecretPath);
     return () => {
@@ -110,7 +107,7 @@ const App: React.FC = () => {
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
   const filteredProducts = products
-    .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) && (selectedCategory === 'All' || p.category === selectedCategory))
+    .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
   return (
@@ -123,7 +120,7 @@ const App: React.FC = () => {
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
         onOrdersClick={() => setIsOrderTrackerOpen(true)} 
-        onAdminClick={() => setIsAdminLoginOpen(true)} // Now linked to the secret trigger in Navbar
+        onAdminClick={() => setIsAdminLoginOpen(true)} 
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
@@ -133,44 +130,12 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
         
-        <div className="mb-8">
-            <div 
-              onClick={() => setIsVerifierOpen(true)}
-              className="bg-gray-900 dark:bg-gray-800 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.01] transition-all shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4"
-            >
-               <div className="flex items-center gap-4">
-                 <div className="p-3 bg-green-500/20 rounded-full">
-                    <ShieldCheck size={28} className="text-green-400" />
-                 </div>
-                 <div>
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1">
-                      {t.verify_product}
-                    </h3>
-                    <p className="text-xs opacity-80 uppercase tracking-widest">Ensure your product is 100% original MobileHub gear</p>
-                 </div>
-               </div>
-               <div className="bg-white/10 p-2 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest hover:bg-white/20 transition-colors">
-                  Tap to Check
-               </div>
-            </div>
-        </div>
-
         <FlashSale />
 
+        {/* Section Title Only - Category/Model Selector Removed */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {['All', ...Object.values(Category)].map(cat => (
-              <button 
-                key={cat} 
-                onClick={() => setSelectedCategory(cat as any)} 
-                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${selectedCategory === cat ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-500'}`}
-              >
-                {cat}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -203,9 +168,9 @@ const App: React.FC = () => {
             <Package size={20} />
             <span className="text-[8px] font-bold uppercase">Orders</span>
           </button>
-          <button onClick={() => setIsVerifierOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
-            <Smartphone size={20} />
-            <span className="text-[8px] font-bold uppercase">Verify</span>
+          <button onClick={() => setIsWishlistOpen(true)} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+            <Package size={20} className="rotate-180" />
+            <span className="text-[8px] font-bold uppercase">Wishlist</span>
           </button>
       </div>
 

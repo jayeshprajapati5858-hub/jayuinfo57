@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Product } from '../types';
-import { Plus, Star, Heart, Truck } from 'lucide-react';
+import { Plus, Star, Heart, RotateCcw } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -40,6 +40,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
         >
             <Heart size={14} className={`transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
         </button>
+
+        {/* 7 Days Badge */}
+        <div className="absolute top-2 left-2 bg-green-500 text-white text-[8px] font-black px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg">
+          <RotateCcw size={8} /> 7 DAYS RETURN
+        </div>
 
         {/* Rating */}
         <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur px-2 py-1 rounded-lg flex items-center gap-1 text-[8px] font-black text-white">

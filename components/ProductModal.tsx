@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { Product, Review, ProtectionPlan } from '../types';
-// Added 'Check' to the imports from lucide-react
-import { X, Star, ShoppingCart, ShieldCheck, Truck, Send, User, RotateCcw, CheckCircle, Check, Search, MapPin, Loader2 } from 'lucide-react';
+import { X, Star, ShoppingCart, ShieldCheck, RotateCcw, CheckCircle, Check, MapPin, Loader2 } from 'lucide-react';
 import { PINCODE_DATA, TRANSLATIONS } from '../constants';
 
 interface ProductModalProps {
@@ -15,9 +14,6 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onAddReview, language = 'en' }) => {
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewText, setReviewText] = useState('');
-  const [userName, setUserName] = useState('');
   const [pincode, setPincode] = useState('');
   const [pincodeResult, setPincodeResult] = useState<{ type: string, days: number } | null>(null);
   const [isCheckingPincode, setIsCheckingPincode] = useState(false);
@@ -38,21 +34,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
       if (!result) setPincodeResult({ type: 'Standard', days: 5 });
       setIsCheckingPincode(false);
     }, 1000);
-  };
-
-  const handleSubmitReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reviewText.trim() || !userName.trim()) return;
-    onAddReview(product.id, {
-      id: Date.now().toString(),
-      userName: userName,
-      rating: reviewRating,
-      comment: reviewText,
-      date: new Date().toISOString().split('T')[0]
-    });
-    setReviewText('');
-    setUserName('');
-    setReviewRating(5);
   };
 
   const shieldPlan: ProtectionPlan = {
@@ -90,6 +71,17 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{product.name}</h2>
               <div className="text-3xl font-bold text-gray-900 dark:text-white mb-6">₹{product.price.toLocaleString()}</div>
+
+              {/* Return Policy Section */}
+              <div className="mb-6 flex items-center gap-4 bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-800/50">
+                <div className="p-2 bg-green-500 text-white rounded-xl">
+                  <RotateCcw size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black uppercase text-green-700 dark:text-green-400 tracking-tighter italic">{t.return_policy}</h4>
+                  <p className="text-[10px] text-green-600 dark:text-green-500 font-medium leading-tight">{t.return_desc}</p>
+                </div>
+              </div>
 
               {/* Pincode Checker */}
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">

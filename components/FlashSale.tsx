@@ -27,48 +27,48 @@ const FlashSale: React.FC = () => {
 
   return (
     <>
-      <div className="relative mb-12 overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 p-1">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 rounded-[22px] bg-white/10 backdrop-blur-md px-8 py-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="rounded-2xl bg-white p-3 text-orange-600 shadow-xl shadow-orange-900/20">
-              <Zap size={32} fill="currentColor" />
+      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 p-[1px]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-[15px] bg-white/10 backdrop-blur-md px-4 py-3 text-white">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-white p-2 text-orange-600 shadow-lg">
+              <Zap size={20} fill="currentColor" />
             </div>
             <div>
-              <h2 className="text-2xl font-black uppercase tracking-tighter sm:text-3xl italic">Flash Sale</h2>
-              <p className="text-sm font-medium text-orange-100">Premium GaN Chargers • Flat 40% OFF</p>
+              <h2 className="text-sm font-black uppercase tracking-tighter sm:text-base italic leading-tight">Flash Sale</h2>
+              <p className="text-[10px] font-medium text-orange-100">Flat 40% OFF on Chargers</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 bg-black/20 px-6 py-4 rounded-2xl border border-white/20">
-            <Timer className="text-orange-200" />
-            <div className="flex gap-3 text-center">
+          <div className="flex items-center gap-3 bg-black/20 px-3 py-2 rounded-xl border border-white/10">
+            <Timer size={14} className="text-orange-200" />
+            <div className="flex gap-2 text-center">
               <div className="flex flex-col">
-                <span className="text-2xl font-bold font-mono">{timeLeft.h.toString().padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase font-bold opacity-60">Hrs</span>
+                <span className="text-sm font-bold font-mono leading-none">{timeLeft.h.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase font-bold opacity-60">Hrs</span>
               </div>
-              <span className="text-2xl font-bold opacity-40">:</span>
+              <span className="text-sm font-bold opacity-40 leading-none">:</span>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold font-mono">{timeLeft.m.toString().padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase font-bold opacity-60">Min</span>
+                <span className="text-sm font-bold font-mono leading-none">{timeLeft.m.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase font-bold opacity-60">Min</span>
               </div>
-              <span className="text-2xl font-bold opacity-40">:</span>
+              <span className="text-sm font-bold opacity-40 leading-none">:</span>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold font-mono">{timeLeft.s.toString().padStart(2, '0')}</span>
-                <span className="text-[10px] uppercase font-bold opacity-60">Sec</span>
+                <span className="text-sm font-bold font-mono leading-none">{timeLeft.s.toString().padStart(2, '0')}</span>
+                <span className="text-[8px] uppercase font-bold opacity-60">Sec</span>
               </div>
             </div>
           </div>
 
           <button 
             onClick={() => setShowModal(true)}
-            className="w-full md:w-auto rounded-xl bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-orange-600 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-orange-900/20"
+            className="w-full sm:w-auto rounded-lg bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:scale-105 active:scale-95 transition-all shadow-md"
           >
-            Claim Offer Now
+            Claim Offer
           </button>
         </div>
       </div>
 
-      {/* Coupon Modal - Z-Index Increased to 120 */}
+      {/* Coupon Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />

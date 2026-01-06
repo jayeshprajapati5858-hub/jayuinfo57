@@ -36,7 +36,9 @@ export const TRANSLATIONS = {
     upload_outfit: "Upload Outfit Photo",
     analyzing: "Analyzing your style...",
     certificate_title: "Certificate of Authenticity",
-    verified_desc: "This product is verified as 100% original MobileHub gear."
+    verified_desc: "This product is verified as 100% original MobileHub gear.",
+    return_policy: "7 Days Return Policy",
+    return_desc: "Hassle-free 7 days replacement if product is damaged or defective."
   },
   gu: {
     shop_name: "મોબાઇલ હબ",
@@ -58,7 +60,9 @@ export const TRANSLATIONS = {
     upload_outfit: "તમારા આઉટફિટનો ફોટો અપલોડ કરો",
     analyzing: "તમારી સ્ટાઇલ તપાસી રહ્યા છીએ...",
     certificate_title: "અસલી હોવાનું પ્રમાણપત્ર",
-    verified_desc: "આ પ્રોડક્ટ ૧૦૦% અસલી મોબાઇલ હબ ગિયર તરીકે પ્રમાણિત છે."
+    verified_desc: "આ પ્રોડક્ટ ૧૦૦% અસલી મોબાઇલ હબ ગિયર તરીકે પ્રમાણિત છે.",
+    return_policy: "૭ દિવસની રિટર્ન પોલિસી",
+    return_desc: "જો પ્રોડક્ટમાં કોઈ ખામી હોય તો ૭ દિવસમાં આસાનીથી બદલી આપવામાં આવશે."
   },
   hi: {
     shop_name: "मोबाइल हब",
