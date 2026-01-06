@@ -9,6 +9,7 @@ import ProductModal from './components/ProductModal';
 import CheckoutModal from './components/CheckoutModal';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLoginModal from './components/AdminLoginModal';
+import UserAuthModal from './components/UserAuthModal';
 import OrderTracker from './components/OrderTracker';
 import Toast from './components/Toast';
 import Footer from './components/Footer'; 
@@ -20,7 +21,7 @@ import SkeletonProduct from './components/SkeletonProduct';
 import WarrantyPortal from './components/WarrantyPortal';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
+import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan, User } from './types';
 import { Home, Search, ShoppingBag, Package, Smartphone, ShieldCheck } from 'lucide-react';
 import { api } from './services/api';
 
@@ -30,6 +31,15 @@ const App: React.FC = () => {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
+  const [users, setUsers] = useState<User[]>(() => {
+    const saved = localStorage.getItem('mh_users');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('mh_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [language, setLanguage] = useState<Language>('gu'); 
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
@@ -38,6 +48,7 @@ const App: React.FC = () => {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isVerifierOpen, setIsVerifierOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -49,7 +60,15 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[language];
 
-  // Robust Admin URL Detection (Case-Insensitive)
+  useEffect(() => {
+    localStorage.setItem('mh_users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
+    else localStorage.removeItem('mh_current_user');
+  }, [currentUser]);
+
   useEffect(() => {
     const checkSecretPath = () => {
       const path = window.location.pathname.toLowerCase();
@@ -106,6 +125,11 @@ const App: React.FC = () => {
 
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
+  const handleLogout = () => {
+    setCurrentUser(null);
+    showToast('Logged out successfully');
+  };
+
   const filteredProducts = products
     .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
@@ -115,12 +139,15 @@ const App: React.FC = () => {
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 
+        currentUser={currentUser}
         onCartClick={() => setIsCartOpen(true)} 
         onWishlistClick={() => setIsWishlistOpen(true)} 
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
         onOrdersClick={() => setIsOrderTrackerOpen(true)} 
         onAdminClick={() => setIsAdminLoginOpen(true)} 
+        onAuthClick={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
@@ -132,7 +159,6 @@ const App: React.FC = () => {
         
         <FlashSale />
 
-        {/* Section Title Only - Category/Model Selector Removed */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
@@ -153,7 +179,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Home size={20} />
@@ -176,6 +201,13 @@ const App: React.FC = () => {
 
       <Footer />
 
+      <UserAuthModal 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+        existingUsers={users}
+        onLogin={(u) => { setCurrentUser(u); showToast(`Welcome back, ${u.name}!`); }}
+        onSignup={(u) => { setUsers(prev => [...prev, u]); showToast('Account created! You can now login.'); }}
+      />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
@@ -199,7 +231,21 @@ const App: React.FC = () => {
         return order;
       }} />
       <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
-      {isAdminDashboardOpen && <AdminDashboard orders={orders} products={products} coupons={coupons} onUpdateOrderStatus={(id, s) => setOrders(prev => prev.map(o => o.id === id ? {...o, status: s} : o))} onAddProduct={(p) => setProducts(prev => [p, ...prev])} onDeleteProduct={(id) => setProducts(prev => prev.filter(i => i.id !== id))} onUpdateStock={(id, s) => setProducts(prev => prev.map(i => i.id === id ? {...i, stock: s} : i))} onAddCoupon={(c) => setCoupons(prev => [...prev, c])} onDeleteCoupon={(c) => setCoupons(prev => prev.filter(cp => cp.code !== c))} onClose={() => setIsAdminDashboardOpen(false)} />}
+      {isAdminDashboardOpen && (
+        <AdminDashboard 
+          orders={orders} 
+          products={products} 
+          coupons={coupons} 
+          users={users}
+          onUpdateOrderStatus={(id, s) => setOrders(prev => prev.map(o => o.id === id ? {...o, status: s} : o))} 
+          onAddProduct={(p) => setProducts(prev => [p, ...prev])} 
+          onDeleteProduct={(id) => setProducts(prev => prev.filter(i => i.id !== id))} 
+          onUpdateStock={(id, s) => setProducts(prev => prev.map(i => i.id === id ? {...i, stock: s} : i))} 
+          onAddCoupon={(c) => setCoupons(prev => [...prev, c])} 
+          onDeleteCoupon={(c) => setCoupons(prev => prev.filter(cp => cp.code !== c))} 
+          onClose={() => setIsAdminDashboardOpen(false)} 
+        />
+      )}
       <AIAssistant />
       <LiveSalesNotification />
       <WhatsAppButton />

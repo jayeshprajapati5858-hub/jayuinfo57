@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, Order, Category, Coupon, Review } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, DollarSign, Users, Activity } from 'lucide-react';
+import { Product, Order, Category, Coupon, Review, User } from '../types';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, DollarSign, Users, Activity, Mail, Lock, Calendar } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 
 interface AdminDashboardProps {
   orders: Order[];
   products: Product[];
   coupons: Coupon[];
+  users: User[];
   onUpdateOrderStatus: (orderId: string, status: 'Shipped' | 'Rejected') => void;
   onAddProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
@@ -22,6 +23,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   orders, 
   products, 
   coupons,
+  users,
   onUpdateOrderStatus, 
   onAddProduct, 
   onDeleteProduct,
@@ -31,11 +33,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddReview,
   onClose 
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users'>('orders');
   const [isUploading, setIsUploading] = useState(false);
   const [liveVisitors, setLiveVisitors] = useState(Math.floor(Math.random() * 8) + 5);
   
-  // Product Form State
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -47,19 +48,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-
-  // Review Modal State
   const [reviewModalOpen, setReviewModalOpen] = useState<string | null>(null);
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '', image: '' });
   const [reviewImageFile, setReviewImageFile] = useState<File | null>(null);
+  const [newCoupon, setNewCoupon] = useState({ code: '', discountPercent: 10 });
 
-  // Coupon Form State
-  const [newCoupon, setNewCoupon] = useState({
-    code: '',
-    discountPercent: 10
-  });
-
-  // --- LIVE VISITOR SIMULATION ---
   useEffect(() => {
     const interval = setInterval(() => {
       setLiveVisitors(prev => {
@@ -75,7 +68,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .filter(o => o.status !== 'Rejected')
     .reduce((sum, order) => sum + (order.finalTotal || order.total), 0);
 
-  // --- Image Helpers ---
   const handleFileToUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -85,7 +77,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
-  // --- Handlers ---
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
@@ -136,8 +127,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       };
 
       onAddReview(reviewModalOpen, review);
-      
-      // Reset
       setReviewModalOpen(null);
       setNewReview({ userName: '', rating: 5, comment: '', image: '' });
       setReviewImageFile(null);
@@ -155,11 +144,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleCouponSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if(!newCoupon.code) return;
-    onAddCoupon({
-      code: newCoupon.code.toUpperCase(),
-      discountPercent: Number(newCoupon.discountPercent),
-      isActive: true
-    });
+    onAddCoupon({ code: newCoupon.code.toUpperCase(), discountPercent: Number(newCoupon.discountPercent), isActive: true });
     setNewCoupon({ code: '', discountPercent: 10 });
   };
 
@@ -202,7 +187,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] bg-gray-50 dark:bg-gray-950 overflow-y-auto">
-      {/* Header */}
       <div className="bg-gray-900 text-white p-4 sticky top-0 z-10 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
@@ -213,7 +197,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           
           <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-             {/* Live Visitors Counter */}
              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 backdrop-blur-sm">
                 <div className="relative">
                     <Activity className="text-green-400" size={18} />
@@ -232,8 +215,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <p className="font-bold text-green-400 text-sm md:text-base">₹{totalEarnings.toLocaleString()}</p>
               </div>
               <div className="text-center md:text-right">
-                <p className="text-[10px] md:text-xs text-gray-400">Total Orders</p>
-                <p className="font-bold text-white text-sm md:text-base">{orders.length}</p>
+                <p className="text-[10px] md:text-xs text-gray-400">Users</p>
+                <p className="font-bold text-white text-sm md:text-base">{users.length}</p>
               </div>
             </div>
           </div>
@@ -241,23 +224,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-2 md:flex md:gap-4 mb-8">
-          <button onClick={() => setActiveTab('orders')} className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'orders' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+        <div className="grid grid-cols-2 md:flex md:gap-4 gap-2 mb-8">
+          <button onClick={() => setActiveTab('orders')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'orders' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Package size={18} /> Orders
           </button>
-          <button onClick={() => setActiveTab('products')} className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'products' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <button onClick={() => setActiveTab('products')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'products' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Plus size={18} /> Products
           </button>
-          <button onClick={() => setActiveTab('coupons')} className={`flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'coupons' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+          <button onClick={() => setActiveTab('coupons')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'coupons' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Tag size={18} /> Coupons
+          </button>
+          <button onClick={() => setActiveTab('users')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'users' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+            <Users size={18} /> Users
           </button>
         </div>
 
-        {/* ORDERS TAB */}
         {activeTab === 'orders' && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-sm">
@@ -295,8 +278,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </tbody>
               </table>
             </div>
-            
-            {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
                 {orders.map(order => (
                     <div key={order.id} className="p-4 space-y-3">
@@ -327,10 +308,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
         
-        {/* PRODUCTS TAB */}
         {activeTab === 'products' && (
           <div className="space-y-6">
-            {/* Add Product Form */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Add New Product</h2>
               <form onSubmit={handleProductSubmit} className="space-y-6">
@@ -345,34 +324,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <input required type="number" placeholder="Stock Qty" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
                 </div>
                 <textarea required rows={2} placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
-                
-                {/* Image Upload */}
                 <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 text-center">
                     <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" id="prod-img" />
                     <label htmlFor="prod-img" className="cursor-pointer flex flex-col items-center gap-2">
                         {imageFile ? <div className="text-green-600 dark:text-green-400 font-medium truncate w-full">{imageFile.name}</div> : <><ImageIcon className="text-gray-400" /> <span className="text-sm text-gray-500">Click to upload image</span></>}
                     </label>
                 </div>
-
                 <button type="submit" disabled={isUploading} className="w-full bg-gray-900 dark:bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                   {isUploading ? <Loader2 className="animate-spin" /> : <Plus size={20} />} Add Product
                 </button>
               </form>
             </div>
 
-            {/* Product List */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 md:p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Current Inventory</h2>
               <div className="grid grid-cols-1 gap-4">
                 {products.map(product => (
-                  <div key={product.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col sm:flex-row gap-5 relative group hover:shadow-lg transition-all duration-300">
-                    {/* Image */}
+                  <div key={product.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex flex-col sm:flex-row gap-5 hover:shadow-lg transition-all duration-300">
                     <div className="w-full sm:w-32 h-40 sm:h-32 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                     </div>
-
                     <div className="flex-1 flex flex-col">
-                      {/* Header: Name, Price, Category */}
                       <div className="flex justify-between items-start mb-2">
                          <div>
                             <span className="text-xs font-bold text-primary uppercase tracking-wider">{product.category}</span>
@@ -380,55 +352,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          </div>
                          <p className="text-lg font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">₹{product.price}</p>
                       </div>
-
-                      {/* Stats Row */}
-                      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700 w-fit">
-                          <div className="flex items-center gap-1">
-                              <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                              <span className="font-bold text-gray-700 dark:text-gray-300">{product.rating || 'N/A'}</span>
-                          </div>
-                          <div className="w-px h-3 bg-gray-300 dark:bg-gray-600"></div>
-                          <div className="flex items-center gap-1">
-                              <DollarSign size={12} className="text-green-600 dark:text-green-400" />
-                              <span className="font-bold text-gray-700 dark:text-gray-300">{product.sales || 0}</span> Sales
-                          </div>
-                          <div className="w-px h-3 bg-gray-300 dark:bg-gray-600"></div>
-                          <span className="dark:text-gray-400">{product.reviews.length} Reviews</span>
-                      </div>
-
-                      {/* Controls Row (Stock + Actions) */}
                       <div className="mt-auto flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                           {/* Stock Management */}
                            <div className="flex items-center gap-3 w-full sm:w-auto">
                                <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
-                                  <button onClick={() => onUpdateStock(product.id, Math.max(0, product.stock - 1))} className="px-3 py-1 hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-l-lg transition-colors">-</button>
+                                  <button onClick={() => onUpdateStock(product.id, Math.max(0, product.stock - 1))} className="px-3 py-1 hover:bg-white dark:hover:bg-gray-700 rounded-l-lg transition-colors">-</button>
                                   <span className="w-10 text-center text-sm font-bold dark:text-white">{product.stock}</span>
-                                  <button onClick={() => onUpdateStock(product.id, product.stock + 1)} className="px-3 py-1 hover:bg-white dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-r-lg transition-colors">+</button>
+                                  <button onClick={() => onUpdateStock(product.id, product.stock + 1)} className="px-3 py-1 hover:bg-white dark:hover:bg-gray-700 rounded-r-lg transition-colors">+</button>
                                </div>
-                               
-                               {/* Stock Indicator */}
-                               {product.stock > 0 ? (
-                                   <div className="flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full border border-green-100 dark:border-green-800">
-                                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                                       IN STOCK
-                                   </div>
-                               ) : (
-                                    <div className="flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full border border-red-100 dark:border-red-800">
-                                       <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                                       SOLD OUT
-                                   </div>
-                               )}
                            </div>
-
-                           {/* Action Buttons */}
                            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-                              <button 
-                                  onClick={() => setReviewModalOpen(product.id)}
-                                  className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm flex items-center justify-center gap-2"
-                              >
-                                  <MessageSquare size={14} className="fill-white/20" /> Add Review
+                              <button onClick={() => setReviewModalOpen(product.id)} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
+                                  <MessageSquare size={14} /> Add Review
                               </button>
-                              <button onClick={() => onDeleteProduct(product.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <button onClick={() => onDeleteProduct(product.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
                                   <Trash2 size={18} />
                               </button>
                            </div>
@@ -441,7 +377,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* Coupons Tab - Simplified */}
         {activeTab === 'coupons' && (
            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
               <h2 className="text-xl font-bold dark:text-white mb-4">Add Coupon</h2>
@@ -462,7 +397,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
            </div>
         )}
 
-        {/* --- REVIEW ADD MODAL --- */}
+        {/* USERS TAB */}
+        {activeTab === 'users' && (
+           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+             <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center">
+                <h2 className="text-xl font-bold dark:text-white">Registered Users ({users.length})</h2>
+                <Users className="text-primary" />
+             </div>
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-sm">
+                   <tr>
+                     <th className="p-4">Name</th>
+                     <th className="p-4">Email / Login ID</th>
+                     <th className="p-4">Password</th>
+                     <th className="p-4">Join Date</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                   {users.map(user => (
+                       <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                         <td className="p-4">
+                            <div className="flex items-center gap-3">
+                               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs uppercase">
+                                  {user.name[0]}
+                               </div>
+                               <div className="font-medium dark:text-white">{user.name}</div>
+                            </div>
+                         </td>
+                         <td className="p-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                               <Mail size={14} /> {user.email}
+                            </div>
+                         </td>
+                         <td className="p-4">
+                            <div className="flex items-center gap-2 font-mono text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">
+                               <Lock size={12} className="text-gray-400" /> {user.password}
+                            </div>
+                         </td>
+                         <td className="p-4">
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                               <Calendar size={14} /> {new Date(user.joinDate).toLocaleDateString()}
+                            </div>
+                         </td>
+                       </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+             {users.length === 0 && <div className="p-12 text-center text-gray-400">No registered users yet.</div>}
+           </div>
+        )}
+
         {reviewModalOpen && (
             <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReviewModalOpen(null)} />
@@ -481,15 +467,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         </div>
                         <textarea required placeholder="Comment" value={newReview.comment} onChange={e => setNewReview({...newReview, comment: e.target.value})} className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-4 py-2" rows={3} />
-                        
-                        {/* Customer Photo Upload */}
                         <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800 text-center">
                             <input type="file" accept="image/*" onChange={handleReviewImageSelect} className="hidden" id="rev-img" />
                             <label htmlFor="rev-img" className="cursor-pointer flex flex-col items-center gap-1">
                                 {reviewImageFile ? <div className="text-green-600 dark:text-green-400 text-sm truncate">{reviewImageFile.name}</div> : <><ImageIcon className="text-gray-400" size={20} /> <span className="text-xs text-gray-500 dark:text-gray-400">Add Customer Photo (Optional)</span></>}
                             </label>
                         </div>
-
                         <button type="submit" disabled={isUploading} className="w-full bg-blue-600 dark:bg-primary text-white py-3 rounded-xl font-bold transition-all">
                             {isUploading ? 'Saving...' : 'Submit Review'}
                         </button>

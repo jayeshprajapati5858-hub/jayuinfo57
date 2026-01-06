@@ -9,6 +9,14 @@ export enum Category {
 
 export type Language = 'en' | 'gu' | 'hi';
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  joinDate: string;
+}
+
 export interface ProtectionPlan {
   id: string;
   name: string;

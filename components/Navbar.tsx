@@ -1,18 +1,21 @@
 
 import React, { useState } from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon, Globe } from 'lucide-react';
-import { Language } from '../types';
+import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon, Globe, User as UserIcon, LogOut } from 'lucide-react';
+import { Language, User } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 interface NavbarProps {
   cartItemCount: number;
   wishlistItemCount: number;
+  currentUser: User | null;
   onCartClick: () => void;
   onWishlistClick: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onOrdersClick: () => void;
   onAdminClick: () => void;
+  onAuthClick: () => void;
+  onLogout: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
   language: Language;
@@ -22,12 +25,15 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ 
   cartItemCount, 
   wishlistItemCount,
+  currentUser,
   onCartClick, 
   onWishlistClick,
   searchTerm, 
   onSearchChange, 
   onOrdersClick,
   onAdminClick,
+  onAuthClick,
+  onLogout,
   darkMode,
   onToggleDarkMode,
   language,
@@ -35,6 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const t = TRANSLATIONS[language];
   const [clickCount, setClickCount] = useState(0);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleLogoClick = () => {
     const newCount = clickCount + 1;
@@ -43,7 +50,6 @@ const Navbar: React.FC<NavbarProps> = ({
       onAdminClick();
       setClickCount(0);
     }
-    // Reset counter after 3 seconds of inactivity
     setTimeout(() => setClickCount(0), 3000);
   };
 
@@ -52,7 +58,6 @@ const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-4">
           
-          {/* Logo with Secret Tap Trigger */}
           <div 
             className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none"
             onClick={handleLogoClick}
@@ -65,7 +70,6 @@ const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
 
-          {/* Search Bar */}
           <div className="flex-1 max-w-md mx-auto hidden md:block">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -81,10 +85,8 @@ const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Language Selector */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 border border-gray-200 dark:border-gray-700">
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 border border-gray-200 dark:border-gray-700">
               <Globe size={14} className="text-gray-500" />
               <select 
                 value={language} 
@@ -97,34 +99,53 @@ const Navbar: React.FC<NavbarProps> = ({
               </select>
             </div>
 
-            {/* Theme Toggle */}
             <button 
               onClick={onToggleDarkMode}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            {/* Orders Button */}
-            <button 
-              onClick={onOrdersClick}
-              className="hidden sm:flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-            >
-              <Package size={18} />
-              <span>{t.orders}</span>
-            </button>
-            <button 
-              onClick={onOrdersClick}
-              className="sm:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Package size={20} />
-            </button>
+            {/* Auth Button */}
+            {currentUser ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-2 p-1 pl-3 bg-gray-100 dark:bg-gray-800 rounded-full border dark:border-gray-700 hover:shadow-sm transition-all"
+                >
+                  <span className="text-xs font-bold dark:text-white hidden lg:block">{currentUser.name.split(' ')[0]}</span>
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
+                    <UserIcon size={16} />
+                  </div>
+                </button>
+                
+                {showProfileMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border dark:border-gray-700 z-50 p-2 animate-in slide-in-from-top-2">
+                       <button onClick={onOrdersClick} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">
+                         <Package size={18} /> {t.orders}
+                       </button>
+                       <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                       <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors">
+                         <LogOut size={18} /> Logout
+                       </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={onAuthClick}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-primary text-white text-xs font-bold rounded-full hover:shadow-lg transition-all"
+              >
+                <UserIcon size={16} /> <span className="hidden sm:block">Login</span>
+              </button>
+            )}
 
-            {/* Wishlist Button */}
             <button 
               onClick={onWishlistClick}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors duration-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-red-500 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <Heart size={24} />
               {wishlistItemCount > 0 && (
@@ -134,10 +155,9 @@ const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Cart Button */}
             <button 
               onClick={onCartClick}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors duration-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <ShoppingCart size={24} />
               {cartItemCount > 0 && (
