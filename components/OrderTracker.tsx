@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Order } from '../types';
-import { X, Package, Truck, XCircle, Clock } from 'lucide-react';
+import { X, Package, Truck, XCircle, Clock, ShieldCheck } from 'lucide-react';
 
 interface OrderTrackerProps {
   isOpen: boolean;
@@ -61,8 +62,17 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ isOpen, onClose, orders }) 
                 </div>
                 
                 <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Total Amount</span>
-                  <span className="font-bold text-gray-900">₹{order.total.toLocaleString()}</span>
+                  <div className="flex flex-col">
+                      <span className="text-sm text-gray-500">Total Amount</span>
+                      <span className="font-bold text-gray-900">₹{order.total.toLocaleString()}</span>
+                  </div>
+                  {order.verificationCode && (
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-dashed border-gray-300">
+                        <ShieldCheck size={14} className="text-primary"/>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold">Code:</span>
+                        <span className="text-xs font-mono font-bold text-gray-900">{order.verificationCode}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))

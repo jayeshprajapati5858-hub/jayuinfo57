@@ -33,6 +33,12 @@ const Invoice: React.FC<InvoiceProps> = ({ order }) => {
         <div className="text-right">
           <p className="text-xs text-gray-400">Order ID</p>
           <p className="font-mono text-sm">#{order.id.slice(-8).toUpperCase()}</p>
+          {order.verificationCode && (
+            <div className="mt-2 bg-green-900/50 px-2 py-1 rounded border border-green-500/30">
+                <p className="text-[10px] text-green-400 uppercase tracking-widest">Auth Code</p>
+                <p className="font-mono text-sm text-white">{order.verificationCode}</p>
+            </div>
+          )}
         </div>
       </div>
 

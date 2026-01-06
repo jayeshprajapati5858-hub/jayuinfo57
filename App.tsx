@@ -195,7 +195,18 @@ const App: React.FC = () => {
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
       <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={()=>{}} language={language} />
       <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} cartItems={cart} coupons={coupons} onPlaceOrder={(det, disc, tot) => {
-        const order: Order = { id: `ord-${Date.now()}`, customerName: det.name, address: det.address, items: [...cart], total: tot+disc, discount: disc, finalTotal: tot, date: new Date().toISOString(), status: 'Pending' };
+        const order: Order = { 
+            id: `ord-${Date.now()}`, 
+            customerName: det.name, 
+            address: det.address, 
+            items: [...cart], 
+            total: tot+disc, 
+            discount: disc, 
+            finalTotal: tot, 
+            date: new Date().toISOString(), 
+            status: 'Pending',
+            verificationCode: 'MH' + Math.floor(Math.random() * 900000 + 100000)
+        };
         setOrders(prev => [...prev, order]);
         setCart([]);
         return order;

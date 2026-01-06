@@ -107,9 +107,14 @@ const AuthenticityVerifier: React.FC<AuthenticityVerifierProps> = ({ isOpen, onC
                  Verify Now
                </button>
                
-               <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                  Secure your gear with MobileHub Trust-Link™
-               </p>
+               <div className="text-center space-y-2">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                      Secure your gear with MobileHub Trust-Link™
+                   </p>
+                   <p className="text-[10px] text-primary/80 font-bold tracking-wide">
+                      Tip: Check your Order Invoice for the code.
+                   </p>
+               </div>
             </div>
           </div>
         )}

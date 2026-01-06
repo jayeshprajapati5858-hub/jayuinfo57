@@ -62,6 +62,7 @@ export interface Order {
   status: OrderStatus;
   address: string;
   coinsEarned?: number;
+  verificationCode?: string;
 }
 
 export interface Coupon {
