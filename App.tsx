@@ -18,11 +18,10 @@ import FlashSale from './components/FlashSale';
 import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
-import WarrantyPortal from './components/WarrantyPortal';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan, User } from './types';
-import { Home, Search, ShoppingBag, Package, Smartphone, ShieldCheck } from 'lucide-react';
+import { Product, CartItem, Category, Order, Coupon, Review, Language, User } from './types';
+import { Home, ShoppingBag, Package, AlertTriangle } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
@@ -37,8 +36,17 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [language, setLanguage] = useState<Language>('gu'); 
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [language] = useState<Language>('en'); 
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+  const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [isHttps] = useState(window.location.protocol === 'https:');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -51,11 +59,22 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
+  const [sortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
 
   const t = TRANSLATIONS[language];
+
+  // Dark Mode Persistence
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
@@ -86,38 +105,53 @@ const App: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
-
   const loadData = async () => {
+    setServerStatus('checking');
     try {
       const dbProducts = await api.getProducts();
-      if (dbProducts?.length > 0) setProducts(dbProducts);
+      if (dbProducts && dbProducts.length > 0) {
+        setProducts(dbProducts);
+        setServerStatus('online');
+      } else {
+        setProducts(DEFAULT_PRODUCTS);
+        setServerStatus('offline');
+      }
       
       const dbOrders = await api.getOrders();
-      setOrders(dbOrders || []);
+      if (dbOrders) setOrders(dbOrders);
 
       const dbUsers = await api.getUsers();
-      setUsers(dbUsers || []);
+      if (dbUsers) setUsers(dbUsers);
+      
     } catch (e) {
-      console.warn("API Load failed.");
+      setProducts(DEFAULT_PRODUCTS);
+      setServerStatus('offline');
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    loadData(); 
+    const interval = setInterval(async () => {
+      const isAlive = await api.checkHealth();
+      setServerStatus(isAlive ? 'online' : 'offline');
+    }, 45000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const addToCart = (product: Product, plan?: ProtectionPlan) => {
+  const addToCart = (product: Product, silent = false) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
-      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1, protectionPlan: plan || item.protectionPlan } : item);
-      return [...prev, { ...product, quantity: 1, protectionPlan: plan }];
+      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { ...product, quantity: 1 }];
     });
-    showToast(`${product.name} Added`);
+    if (!silent) showToast(`${product.name} Added`);
+  };
+
+  const buyNow = (product: Product) => {
+    addToCart(product, true);
+    setIsCheckoutOpen(true);
   };
 
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
@@ -130,12 +164,39 @@ const App: React.FC = () => {
   const handleSignup = async (newUser: User) => {
     try {
       const savedUser = await api.createUser(newUser);
-      setUsers(prev => [...prev, savedUser]);
-      showToast('Account created! You can now login.');
-    } catch (e) {
-      // Fallback to local if server fails
+      if (savedUser) {
+        setUsers(prev => [...prev, savedUser]);
+        showToast('Account saved on server!');
+        return true;
+      }
+      throw new Error("Server sync failed");
+    } catch (e: any) {
       setUsers(prev => [...prev, newUser]);
-      showToast('Account created (Local Mode)');
+      showToast('Offline Mode: Account saved locally.');
+      return true;
+    }
+  };
+
+  const handleLogin = async (credentials: { email: string, password: string }) => {
+    try {
+      const latestUsers = await api.getUsers();
+      const userList = latestUsers && latestUsers.length > 0 ? latestUsers : users;
+      
+      const user = userList.find(u => u.email === credentials.email && u.password === credentials.password);
+      if (user) {
+        setCurrentUser(user);
+        showToast(`Welcome, ${user.name}!`);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
+      if (user) {
+        setCurrentUser(user);
+        showToast(`Welcome! (Offline Mode)`);
+        return true;
+      }
+      return false;
     }
   };
 
@@ -144,7 +205,16 @@ const App: React.FC = () => {
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300 pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] transition-colors duration-300 pb-20 md:pb-0 text-gray-900 dark:text-gray-100">
+      
+      {/* GLOBAL SERVER STATUS WARNING */}
+      {isHttps && serverStatus === 'offline' && (
+        <div className="bg-amber-500 text-white text-[10px] md:text-xs py-2 px-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest z-[60] shadow-lg sticky top-0">
+          <AlertTriangle size={14} />
+          Server connection blocked: Please open this site with http:// protocol.
+        </div>
+      )}
+
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 
@@ -160,7 +230,6 @@ const App: React.FC = () => {
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
-        onLanguageChange={setLanguage}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -181,6 +250,7 @@ const App: React.FC = () => {
               product={product} 
               isWishlisted={wishlist.includes(product.id)} 
               onAddToCart={(p) => addToCart(p)} 
+              onBuyNow={(p) => buyNow(p)}
               onViewDetails={setSelectedProduct} 
               onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
             />
@@ -213,8 +283,7 @@ const App: React.FC = () => {
       <UserAuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
-        existingUsers={users}
-        onLogin={(u) => { setCurrentUser(u); showToast(`Welcome back, ${u.name}!`); }}
+        onLogin={handleLogin}
         onSignup={handleSignup}
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
@@ -246,6 +315,7 @@ const App: React.FC = () => {
           products={products} 
           coupons={coupons} 
           users={users}
+          serverStatus={serverStatus}
           onUpdateOrderStatus={(id, s) => setOrders(prev => prev.map(o => o.id === id ? {...o, status: s} : o))} 
           onAddProduct={(p) => setProducts(prev => [p, ...prev])} 
           onDeleteProduct={(id) => setProducts(prev => prev.filter(i => i.id !== id))} 

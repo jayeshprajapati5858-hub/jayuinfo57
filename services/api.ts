@@ -1,16 +1,18 @@
 
 import { Product, Order, Coupon, Review, User } from '../types';
 
-// Pointing to the VPS backend server
+// Your VPS Backend IP
 const API_URL = 'http://152.53.240.143:5000/api'; 
 
 const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
-// Helper to handle API errors with timeout support
-const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 5000) => {
+/**
+ * Enhanced fetch with diagnostic logging and silent error handling
+ */
+const fetchWithRetry = async (url: string, options: RequestInit = {}, timeout = 5000) => {
   if (isHttps && url.startsWith('http:')) {
-    console.warn("Mixed Content: Blocking HTTP API call on HTTPS site.");
-    throw new Error("Mixed Content Blocked");
+    // We log this as a warning instead of error to be less aggressive
+    console.warn("MIXED CONTENT: Browser may block this HTTP call because the site is HTTPS.");
   }
 
   const controller = new AbortController();
@@ -29,24 +31,28 @@ const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout 
     });
     clearTimeout(id);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(id);
-    throw error;
+    // Return a failed response object instead of throwing
+    return { ok: false, statusText: error.message };
   }
 };
 
-const handleResponse = async (response: Response) => {
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `API Request Failed with status ${response.status}`);
+const handleResponse = async (response: any) => {
+  if (!response || response.ok === false) {
+    return null;
   }
-  return response.json();
+  try {
+    return await response.json();
+  } catch (e) {
+    return null;
+  }
 };
 
 export const api = {
   checkHealth: async () => {
     try {
-      const res = await fetchWithTimeout(`${API_URL}/health`, {}, 2000);
+      const res = await fetch(`${API_URL}/products`, { method: 'HEAD', mode: 'cors' });
       return res.ok;
     } catch (e) {
       return false;
@@ -55,88 +61,61 @@ export const api = {
 
   // USER METHODS
   getUsers: async (): Promise<User[]> => {
-    try {
-      const res = await fetchWithTimeout(`${API_URL}/users`);
-      return await handleResponse(res);
-    } catch (e) {
-      console.warn("Could not fetch users from server.");
-      return [];
-    }
+    const res = await fetchWithRetry(`${API_URL}/users`);
+    const data = await handleResponse(res);
+    return data || [];
   },
 
-  createUser: async (user: User): Promise<User> => {
-    const res = await fetchWithTimeout(`${API_URL}/users`, {
+  createUser: async (user: User): Promise<User | null> => {
+    const res = await fetchWithRetry(`${API_URL}/users`, {
       method: 'POST',
       body: JSON.stringify(user),
     });
-    return handleResponse(res);
+    return await handleResponse(res);
   },
 
   // PRODUCT METHODS
-  getProducts: async (): Promise<Product[]> => {
-    try {
-      const res = await fetchWithTimeout(`${API_URL}/products`);
-      return await handleResponse(res);
-    } catch (e) {
-      console.warn("Could not fetch products from server.");
-      throw e;
-    }
+  getProducts: async (): Promise<Product[] | null> => {
+    const res = await fetchWithRetry(`${API_URL}/products`);
+    return await handleResponse(res);
   },
 
-  addProduct: async (product: Product): Promise<Product> => {
-    const res = await fetchWithTimeout(`${API_URL}/products`, {
+  addProduct: async (product: Product): Promise<Product | null> => {
+    const res = await fetchWithRetry(`${API_URL}/products`, {
       method: 'POST',
       body: JSON.stringify(product),
     });
-    return handleResponse(res);
+    return await handleResponse(res);
   },
 
-  updateStock: async (id: string, stock: number): Promise<Product> => {
-    const res = await fetchWithTimeout(`${API_URL}/products/${id}/stock`, {
+  updateStock: async (id: string, stock: number): Promise<Product | null> => {
+    const res = await fetchWithRetry(`${API_URL}/products/${id}/stock`, {
       method: 'PATCH',
       body: JSON.stringify({ stock }),
     });
-    return handleResponse(res);
-  },
-
-  addReview: async (productId: string, review: Review): Promise<Product> => {
-    const res = await fetchWithTimeout(`${API_URL}/products/${productId}/reviews`, {
-      method: 'POST',
-      body: JSON.stringify(review),
-    });
-    return handleResponse(res);
-  },
-
-  deleteProduct: async (id: string): Promise<void> => {
-    const res = await fetchWithTimeout(`${API_URL}/products/${id}`, {
-      method: 'DELETE',
-    });
-    return handleResponse(res);
+    return await handleResponse(res);
   },
 
   // ORDER METHODS
   getOrders: async (): Promise<Order[]> => {
-    try {
-      const res = await fetchWithTimeout(`${API_URL}/orders`);
-      return await handleResponse(res);
-    } catch (e) {
-      return [];
-    }
+    const res = await fetchWithRetry(`${API_URL}/orders`);
+    const data = await handleResponse(res);
+    return data || [];
   },
 
-  createOrder: async (order: Order): Promise<Order> => {
-    const res = await fetchWithTimeout(`${API_URL}/orders`, {
+  createOrder: async (order: Order): Promise<Order | null> => {
+    const res = await fetchWithRetry(`${API_URL}/orders`, {
       method: 'POST',
       body: JSON.stringify(order),
     });
-    return handleResponse(res);
+    return await handleResponse(res);
   },
 
-  updateOrderStatus: async (id: string, status: string): Promise<Order> => {
-    const res = await fetchWithTimeout(`${API_URL}/orders/${id}/status`, {
+  updateOrderStatus: async (id: string, status: string): Promise<Order | null> => {
+    const res = await fetchWithRetry(`${API_URL}/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
-    return handleResponse(res);
+    return await handleResponse(res);
   },
 };

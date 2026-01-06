@@ -7,7 +7,7 @@ export enum Category {
   CABLE = 'Cables'
 }
 
-export type Language = 'en' | 'gu' | 'hi';
+export type Language = 'en';
 
 export interface User {
   id: string;
@@ -15,13 +15,6 @@ export interface User {
   email: string;
   password: string;
   joinDate: string;
-}
-
-export interface ProtectionPlan {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
 }
 
 export interface Review {
@@ -48,7 +41,6 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
-  protectionPlan?: ProtectionPlan;
 }
 
 export interface ChatMessage {

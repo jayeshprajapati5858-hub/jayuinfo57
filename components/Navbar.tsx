@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon, Globe, User as UserIcon, LogOut } from 'lucide-react';
+import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut } from 'lucide-react';
 import { Language, User } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -19,7 +19,6 @@ interface NavbarProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   language: Language;
-  onLanguageChange: (lang: Language) => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -36,8 +35,7 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   darkMode,
   onToggleDarkMode,
-  language,
-  onLanguageChange
+  language
 }) => {
   const t = TRANSLATIONS[language];
   const [clickCount, setClickCount] = useState(0);
@@ -86,19 +84,6 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-1 border border-gray-200 dark:border-gray-700">
-              <Globe size={14} className="text-gray-500" />
-              <select 
-                value={language} 
-                onChange={(e) => onLanguageChange(e.target.value as Language)}
-                className="bg-transparent text-[10px] font-bold uppercase tracking-widest outline-none dark:text-white cursor-pointer"
-              >
-                <option value="en" className="text-black">EN</option>
-                <option value="gu" className="text-black">GU</option>
-                <option value="hi" className="text-black">HI</option>
-              </select>
-            </div>
-
             <button 
               onClick={onToggleDarkMode}
               className="p-2 text-gray-600 dark:text-gray-300 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"

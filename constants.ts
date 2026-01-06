@@ -8,13 +8,6 @@ export const INITIAL_COUPONS: Coupon[] = [
   { code: 'SAVE20', discountPercent: 20, isActive: true },
 ];
 
-export const PINCODE_DATA: Record<string, { type: 'Express' | 'Standard', days: number }> = {
-  '395001': { type: 'Express', days: 1 },
-  '380001': { type: 'Express', days: 1 },
-  '360001': { type: 'Standard', days: 2 },
-  '400001': { type: 'Standard', days: 3 },
-};
-
 export const TRANSLATIONS = {
   en: {
     shop_name: "MobileHub",
@@ -23,10 +16,6 @@ export const TRANSLATIONS = {
     shop_now: "Shop Collection",
     premium_collection: "Premium Collection",
     add_to_cart: "Add to Cart",
-    check_delivery: "Check Delivery",
-    enter_pincode: "Enter Pincode",
-    protection_plan: "Mobile Shield Protection",
-    protection_desc: "Cover your device against accidental damage for 1 year.",
     orders: "Orders",
     cart: "Cart",
     search_placeholder: "Search chargers, cases...",
@@ -38,53 +27,10 @@ export const TRANSLATIONS = {
     certificate_title: "Certificate of Authenticity",
     verified_desc: "This product is verified as 100% original MobileHub gear.",
     return_policy: "7 Days Return Policy",
-    return_desc: "Hassle-free 7 days replacement if product is damaged or defective."
-  },
-  gu: {
-    shop_name: "મોબાઇલ હબ",
-    hero_title: "તમારા ડિજિટલ જીવનને સુરક્ષિત કરો",
-    hero_subtitle: "પ્રીમિયમ ગ્લાસ કવર, અલ્ટ્રા-ફાસ્ટ ચાર્જર અને મજબૂત કેસ શોધો.",
-    shop_now: "ખરીદી કરો",
-    premium_collection: "પ્રીમિયમ કલેક્શન",
-    add_to_cart: "કાર્ટમાં ઉમેરો",
-    check_delivery: "ડિલિવરી તપાસો",
-    enter_pincode: "પિનકોડ નાખો",
-    protection_plan: "મોબાઇલ શીલ્ડ સુરક્ષા",
-    protection_desc: "૧ વર્ષ માટે તમારા ઉપકરણને આકસ્મિક નુકસાન સામે સુરક્ષિત કરો.",
-    orders: "ઓર્ડર",
-    cart: "કાર્ટ",
-    search_placeholder: "ચાર્જર, કવર શોધો...",
-    flash_sale: "ફ્લેશ સેલ",
-    style_matcher: "AI સ્ટાઇલ મેચર",
-    verify_product: "અસલી પ્રોડક્ટ તપાસો",
-    upload_outfit: "તમારા આઉટફિટનો ફોટો અપલોડ કરો",
-    analyzing: "તમારી સ્ટાઇલ તપાસી રહ્યા છીએ...",
-    certificate_title: "અસલી હોવાનું પ્રમાણપત્ર",
-    verified_desc: "આ પ્રોડક્ટ ૧૦૦% અસલી મોબાઇલ હબ ગિયર તરીકે પ્રમાણિત છે.",
-    return_policy: "૭ દિવસની રિટર્ન પોલિસી",
-    return_desc: "જો પ્રોડક્ટમાં કોઈ ખામી હોય તો ૭ દિવસમાં આસાનીથી બદલી આપવામાં આવશે."
-  },
-  hi: {
-    shop_name: "मोबाइल हब",
-    hero_title: "अपने डिजिटल जीवन को सुरक्षित करें",
-    hero_subtitle: "प्रीमियम ग्लास कवर, अल्ट्रा-फास्ट चार्जर और मजबूत केस खोजें।",
-    shop_now: "अभी खरीदें",
-    premium_collection: "प्रीमियम कलेक्शन",
-    add_to_cart: "कार्ट में जोड़ें",
-    check_delivery: "डिलीवरी चेक करें",
-    enter_pincode: "पिनकोड दर्ज करें",
-    protection_plan: "मोबाइल शील्ड सुरक्षा",
-    protection_desc: "1 वर्ष के लिए अपने डिवाइस को आकस्मिक क्षति से सुरक्षित करें।",
-    orders: "ऑर्डर",
-    cart: "कार्ट",
-    search_placeholder: "चार्जर, कवर खोजें...",
-    flash_sale: "फ्लैश सेल",
-    style_matcher: "AI स्टाइल मेचर",
-    verify_product: "असली उत्पाद जांचें",
-    upload_outfit: "अपने आउटफिट का फोटो अपलोड करें",
-    analyzing: "आपकी शैली का विश्लेषण हो रहा है...",
-    certificate_title: "प्रामाणिकता का प्रमाण पत्र",
-    verified_desc: "यह उत्पाद 100% असली मोबाइल हब गियर के रूप में प्रमाणित है।"
+    return_desc: "Hassle-free 7 days replacement if product is damaged or defective.",
+    next_day_dispatch: "⚡ Next Day Dispatch",
+    order_via_whatsapp: "Order via WhatsApp",
+    whatsapp_skip_form: "Skip the form? Chat & Order instantly."
   }
 };
 

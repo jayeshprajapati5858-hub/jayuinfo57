@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { CartItem, Coupon, Order } from '../types';
-import { X, CheckCircle, CreditCard, Truck, Loader2, Tag, ArrowLeft, Gift, Smartphone, Mail, MapPin, Wallet, Banknote, RotateCcw, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle, CreditCard, Truck, Loader2, Tag, ArrowLeft, Gift, Smartphone, Mail, MapPin, Wallet, Banknote, RotateCcw, ShieldCheck, MessageCircle } from 'lucide-react';
+import { TRANSLATIONS, SHOP_NAME } from '../constants';
 import Invoice from './Invoice';
 import ScratchCard from './ScratchCard';
 
@@ -19,15 +20,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
   const [showInvoice, setShowInvoice] = useState(false);
   
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', address: '', city: '', zip: '' });
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi' | 'card'>('cod');
   
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState('');
 
+  const t = TRANSLATIONS['en'];
+
   if (!isOpen) return null;
 
-  const subtotal = cartItems.reduce((sum, item) => sum + ((item.price + (item.protectionPlan?.price || 0)) * item.quantity), 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discountAmount = appliedCoupon ? Math.round((subtotal * appliedCoupon.discountPercent) / 100) : 0;
   const finalTotal = subtotal - discountAmount;
 
@@ -54,6 +56,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
       setLastOrder(order);
       setStep('success');
     }, 2000);
+  };
+
+  const handleWhatsAppOrder = () => {
+    const phoneNumber = "919876543210"; // Actual Admin WhatsApp Number
+    const cartSummary = cartItems.map(item => `- ${item.name} (Qty: ${item.quantity})`).join('\n');
+    const message = `Hello ${SHOP_NAME}! I want to place an order.\n\n*Items:*\n${cartSummary}\n\n*Total:* ₹${finalTotal.toLocaleString()}\n\nMy Details:\nName: ${formData.name || 'Not provided'}\nPhone: ${formData.phone || 'Not provided'}\nAddress: ${formData.address || 'Not provided'}, ${formData.city || 'Not provided'} - ${formData.zip || 'Not provided'}`;
+    
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleClose = () => {
@@ -95,7 +105,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
 
                 <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                    <button onClick={() => setShowInvoice(true)} className="flex items-center justify-center gap-2 p-4 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-colors">
-                      <Invoice size={18} /> Invoice
+                      <Smartphone size={18} /> Invoice
                    </button>
                    <button onClick={handleClose} className="p-4 bg-primary text-white rounded-2xl font-bold text-sm">Continue Shop</button>
                 </div>
@@ -157,21 +167,51 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
             </div>
 
             <div className="flex-1 p-6 md:p-10 bg-white dark:bg-gray-900 overflow-y-auto">
-               <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-8 dark:text-white">Shipping Details</h2>
+               <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-4 dark:text-white">Shipping Details</h2>
+               
+               <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-2xl flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                     <div className="p-2 bg-green-500 text-white rounded-xl">
+                        <MessageCircle size={20} />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest leading-none mb-1">{t.whatsapp_skip_form}</p>
+                        <p className="text-[8px] text-green-600 dark:text-green-500 font-medium">Chat directly with our support team</p>
+                     </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={handleWhatsAppOrder}
+                    className="bg-green-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-green-700 transition-colors shadow-lg shadow-green-200 dark:shadow-none"
+                  >
+                    {t.order_via_whatsapp}
+                  </button>
+               </div>
+
                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input required placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none" />
                     <input required type="tel" placeholder="Phone Number" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none" />
                   </div>
-                  <input required type="email" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none" />
+                  <input required type="email" placeholder="Email Address" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-primary rounded-xl outline-none dark:text-white transition-all" />
                   <textarea required placeholder="Full Delivery Address" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none h-20" />
                   <div className="grid grid-cols-2 gap-4">
                      <input required placeholder="City" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none" />
                      <input required placeholder="Pincode" maxLength={6} value={formData.zip} onChange={e => setFormData({...formData, zip: e.target.value.replace(/\D/g,'')})} className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-900 dark:text-white outline-none" />
                   </div>
-                  <button type="submit" className="w-full bg-primary text-white py-4 rounded-2xl font-black text-lg italic uppercase tracking-widest shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all mt-6 flex items-center justify-center gap-2">
-                     <CheckCircle size={20} /> Confirm Order
-                  </button>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <button type="submit" className="w-full bg-gray-900 dark:bg-primary text-white py-4 rounded-2xl font-black text-lg italic uppercase tracking-widest shadow-xl shadow-gray-200 dark:shadow-none hover:-translate-y-1 transition-all flex items-center justify-center gap-2 order-2 sm:order-1">
+                      <CheckCircle size={20} /> Confirm Order
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleWhatsAppOrder}
+                      className="w-full bg-green-500 text-white py-4 rounded-2xl font-black text-lg italic uppercase tracking-widest shadow-xl shadow-green-200 dark:shadow-none hover:-translate-y-1 transition-all flex items-center justify-center gap-2 order-1 sm:order-2"
+                    >
+                      <MessageCircle size={20} /> WhatsApp
+                    </button>
+                  </div>
                </form>
             </div>
           </div>

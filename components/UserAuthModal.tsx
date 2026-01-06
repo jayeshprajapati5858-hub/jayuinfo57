@@ -6,12 +6,11 @@ import { User } from '../types';
 interface UserAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (user: User) => void;
-  onSignup: (user: User) => void;
-  existingUsers: User[];
+  onLogin: (credentials: { email: string, password: string }) => Promise<boolean>;
+  onSignup: (user: User) => Promise<boolean>;
 }
 
-const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin, onSignup, existingUsers }) => {
+const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin, onSignup }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,42 +24,44 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
+    try {
       if (mode === 'login') {
-        const user = existingUsers.find(u => u.email === formData.email && u.password === formData.password);
-        if (user) {
-          onLogin(user);
+        const success = await onLogin({ email: formData.email, password: formData.password });
+        if (success) {
           onClose();
         } else {
           setError('Invalid email or password. Please try again.');
         }
       } else {
-        const exists = existingUsers.find(u => u.email === formData.email);
-        if (exists) {
-          setError('An account with this email already exists.');
-        } else {
-          const newUser: User = {
-            id: `user-${Date.now()}`,
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            joinDate: new Date().toISOString()
-          };
-          onSignup(newUser);
+        const newUser: User = {
+          id: `user-${Date.now()}`,
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          joinDate: new Date().toISOString()
+        };
+        const success = await onSignup(newUser);
+        if (success) {
           setSuccess(true);
           setTimeout(() => {
             setSuccess(false);
             setMode('login');
-          }, 1500);
+            setFormData(prev => ({ ...prev, password: '' })); // Clear password for login
+          }, 2000);
+        } else {
+          setError('Could not create account. Email might already exist.');
         }
       }
+    } catch (err) {
+      setError('Connection error. Please check if the server is active.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -87,14 +88,14 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle size={32} />
               </div>
-              <h3 className="text-xl font-bold dark:text-white">Account Created!</h3>
-              <p className="text-gray-500">Redirecting to login...</p>
+              <h3 className="text-xl font-bold dark:text-white uppercase">Success!</h3>
+              <p className="text-gray-500 text-sm">Account created on server. Switching to login...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
-                <div className="relative">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <div className="relative group">
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
                   <input 
                     required 
                     type="text" 
@@ -106,8 +107,8 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
                 </div>
               )}
               
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   required 
                   type="email" 
@@ -118,8 +119,8 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
                 />
               </div>
 
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
                 <input 
                   required 
                   type="password" 
@@ -131,7 +132,7 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
               </div>
 
               {error && (
-                <p className="text-red-500 text-xs font-bold text-center animate-in shake-1 tracking-tight">
+                <p className="text-red-500 text-xs font-bold text-center animate-in shake-1 tracking-tight bg-red-50 dark:bg-red-900/10 p-2 rounded-lg">
                   {error}
                 </p>
               )}
@@ -139,7 +140,7 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
               <button 
                 disabled={loading}
                 type="submit" 
-                className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 size={20} className="animate-spin" /> : <><ArrowRight size={20} /> {mode === 'login' ? 'Login' : 'Signup'}</>}
               </button>
