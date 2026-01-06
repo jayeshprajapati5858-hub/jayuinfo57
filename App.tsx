@@ -18,7 +18,6 @@ import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
 import WarrantyPortal from './components/WarrantyPortal';
-import StyleMatcher from './components/StyleMatcher';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, Language, ProtectionPlan } from './types';
@@ -40,7 +39,6 @@ const App: React.FC = () => {
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
-  const [isStyleMatcherOpen, setIsStyleMatcherOpen] = useState(false);
   const [isVerifierOpen, setIsVerifierOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -108,25 +106,26 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
         
-        {/* Next-Gen Feature Entry Points - Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div 
-              onClick={() => setIsStyleMatcherOpen(true)}
-              className="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl relative overflow-hidden"
-            >
-               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 flex items-center gap-2">
-                 <Sparkles size={18} className="text-yellow-300" /> {t.style_matcher}
-               </h3>
-               <p className="text-[10px] opacity-80 uppercase tracking-widest">{t.upload_outfit}</p>
-            </div>
+        {/* Verification Card - Full Width */}
+        <div className="mb-8">
             <div 
               onClick={() => setIsVerifierOpen(true)}
-              className="bg-gray-900 dark:bg-gray-800 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.02] transition-all shadow-xl relative overflow-hidden"
+              className="bg-gray-900 dark:bg-gray-800 p-6 rounded-[32px] text-white cursor-pointer hover:scale-[1.01] transition-all shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4"
             >
-               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1 flex items-center gap-2">
-                 <ShieldCheck size={18} className="text-green-400" /> {t.verify_product}
-               </h3>
-               <p className="text-[10px] opacity-80 uppercase tracking-widest">Verify original gear</p>
+               <div className="flex items-center gap-4">
+                 <div className="p-3 bg-green-500/20 rounded-full">
+                    <ShieldCheck size={28} className="text-green-400" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-1">
+                      {t.verify_product}
+                    </h3>
+                    <p className="text-xs opacity-80 uppercase tracking-widest">Ensure your product is 100% original MobileHub gear</p>
+                 </div>
+               </div>
+               <div className="bg-white/10 p-2 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest hover:bg-white/20 transition-colors">
+                  Tap to Check
+               </div>
             </div>
         </div>
 
@@ -188,7 +187,6 @@ const App: React.FC = () => {
 
       <Footer />
 
-      <StyleMatcher isOpen={isStyleMatcherOpen} onClose={() => setIsStyleMatcherOpen(false)} language={language} onAddToCart={addToCart} />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
