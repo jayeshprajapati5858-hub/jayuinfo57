@@ -31,10 +31,7 @@ const App: React.FC = () => {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('mh_users');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('mh_current_user');
     return saved ? JSON.parse(saved) : null;
@@ -59,10 +56,6 @@ const App: React.FC = () => {
   const [isToastVisible, setIsToastVisible] = useState(false);
 
   const t = TRANSLATIONS[language];
-
-  useEffect(() => {
-    localStorage.setItem('mh_users', JSON.stringify(users));
-  }, [users]);
 
   useEffect(() => {
     if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
@@ -103,8 +96,12 @@ const App: React.FC = () => {
     try {
       const dbProducts = await api.getProducts();
       if (dbProducts?.length > 0) setProducts(dbProducts);
+      
       const dbOrders = await api.getOrders();
       setOrders(dbOrders || []);
+
+      const dbUsers = await api.getUsers();
+      setUsers(dbUsers || []);
     } catch (e) {
       console.warn("API Load failed.");
     } finally {
@@ -128,6 +125,18 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     showToast('Logged out successfully');
+  };
+
+  const handleSignup = async (newUser: User) => {
+    try {
+      const savedUser = await api.createUser(newUser);
+      setUsers(prev => [...prev, savedUser]);
+      showToast('Account created! You can now login.');
+    } catch (e) {
+      // Fallback to local if server fails
+      setUsers(prev => [...prev, newUser]);
+      showToast('Account created (Local Mode)');
+    }
   };
 
   const filteredProducts = products
@@ -206,7 +215,7 @@ const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)} 
         existingUsers={users}
         onLogin={(u) => { setCurrentUser(u); showToast(`Welcome back, ${u.name}!`); }}
-        onSignup={(u) => { setUsers(prev => [...prev, u]); showToast('Account created! You can now login.'); }}
+        onSignup={handleSignup}
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />

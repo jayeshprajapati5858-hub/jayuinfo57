@@ -1,5 +1,5 @@
 
-import { Product, Order, Coupon, Review } from '../types';
+import { Product, Order, Coupon, Review, User } from '../types';
 
 // Pointing to the VPS backend server
 const API_URL = 'http://152.53.240.143:5000/api'; 
@@ -7,9 +7,7 @@ const API_URL = 'http://152.53.240.143:5000/api';
 const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
 // Helper to handle API errors with timeout support
-const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 3000) => {
-  // If we are on HTTPS and trying to call HTTP, browser will block it. 
-  // Return a rejection early to trigger fallback.
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 5000) => {
   if (isHttps && url.startsWith('http:')) {
     console.warn("Mixed Content: Blocking HTTP API call on HTTPS site.");
     throw new Error("Mixed Content Blocked");
@@ -55,12 +53,32 @@ export const api = {
     }
   },
 
+  // USER METHODS
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const res = await fetchWithTimeout(`${API_URL}/users`);
+      return await handleResponse(res);
+    } catch (e) {
+      console.warn("Could not fetch users from server.");
+      return [];
+    }
+  },
+
+  createUser: async (user: User): Promise<User> => {
+    const res = await fetchWithTimeout(`${API_URL}/users`, {
+      method: 'POST',
+      body: JSON.stringify(user),
+    });
+    return handleResponse(res);
+  },
+
+  // PRODUCT METHODS
   getProducts: async (): Promise<Product[]> => {
     try {
       const res = await fetchWithTimeout(`${API_URL}/products`);
       return await handleResponse(res);
     } catch (e) {
-      console.warn("Could not fetch products from server, using local data.");
+      console.warn("Could not fetch products from server.");
       throw e;
     }
   },
@@ -96,6 +114,7 @@ export const api = {
     return handleResponse(res);
   },
 
+  // ORDER METHODS
   getOrders: async (): Promise<Order[]> => {
     try {
       const res = await fetchWithTimeout(`${API_URL}/orders`);
