@@ -50,18 +50,31 @@ const App: React.FC = () => {
 
   const t = TRANSLATIONS[language];
 
-  // Logic to detect Secret Admin URL
+  // Robust Admin URL Detection (Case-Insensitive)
   useEffect(() => {
     const checkSecretPath = () => {
-      // Check if URL ends with /Adminjayu or Adminjayu is in the hash
-      if (window.location.pathname.endsWith('/Adminjayu') || window.location.hash === '#Adminjayu') {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      
+      // Matches /Adminjayu, #Adminjayu, or ?admin
+      if (
+        path.endsWith('/adminjayu') || 
+        hash === '#adminjayu' || 
+        search.includes('adminjayu')
+      ) {
         setIsAdminLoginOpen(true);
       }
     };
     
     checkSecretPath();
+    // Listen for changes without page reload
+    window.addEventListener('hashchange', checkSecretPath);
     window.addEventListener('popstate', checkSecretPath);
-    return () => window.removeEventListener('popstate', checkSecretPath);
+    return () => {
+      window.removeEventListener('hashchange', checkSecretPath);
+      window.removeEventListener('popstate', checkSecretPath);
+    };
   }, []);
 
   useEffect(() => {
@@ -110,7 +123,7 @@ const App: React.FC = () => {
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
         onOrdersClick={() => setIsOrderTrackerOpen(true)} 
-        onAdminClick={() => {}} // Disabled direct click
+        onAdminClick={() => setIsAdminLoginOpen(true)} // Now linked to the secret trigger in Navbar
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
@@ -175,7 +188,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION - Admin Button Removed for Security */}
+      {/* MOBILE BOTTOM NAVIGATION */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Home size={20} />

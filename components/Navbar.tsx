@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ShoppingCart, Smartphone, Search, Package, Lock, Heart, Sun, Moon, Globe } from 'lucide-react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
@@ -34,14 +34,29 @@ const Navbar: React.FC<NavbarProps> = ({
   onLanguageChange
 }) => {
   const t = TRANSLATIONS[language];
+  const [clickCount, setClickCount] = useState(0);
+
+  const handleLogoClick = () => {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    if (newCount === 5) {
+      onAdminClick();
+      setClickCount(0);
+    }
+    // Reset counter after 3 seconds of inactivity
+    setTimeout(() => setClickCount(0), 3000);
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-4">
           
-          {/* Logo */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Logo with Secret Tap Trigger */}
+          <div 
+            className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none"
+            onClick={handleLogoClick}
+          >
             <div className="bg-primary p-2 rounded-lg text-white">
               <Smartphone size={24} />
             </div>
@@ -90,8 +105,6 @@ const Navbar: React.FC<NavbarProps> = ({
             >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-
-            {/* Admin Button Removed for Hidden Access Security */}
 
             {/* Orders Button */}
             <button 
