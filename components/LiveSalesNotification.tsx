@@ -38,8 +38,8 @@ const LiveSalesNotification: React.FC = () => {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 sm:bottom-6 sm:left-6 z-[100] animate-in slide-in-from-left-12 duration-500">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 border border-gray-100 dark:border-gray-700 flex items-center gap-4 max-w-[280px] sm:max-w-xs relative group">
+    <div className="fixed bottom-24 left-4 sm:bottom-6 sm:left-6 z-[100] animate-fadeInUp">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 border border-gray-100 dark:border-gray-700 flex items-center gap-4 max-w-[280px] sm:max-w-xs relative group hover:scale-105 transition-transform">
         <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-xl text-primary flex-shrink-0">
           <ShoppingBag size={24} />
         </div>

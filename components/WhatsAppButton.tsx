@@ -12,7 +12,7 @@ const WhatsAppButton: React.FC = () => {
   return (
     <button 
       onClick={openWhatsApp}
-      className="fixed bottom-6 left-6 z-40 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group"
+      className="fixed bottom-6 left-6 z-40 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group animate-[float_3s_infinite_ease-in-out]"
       title="Chat on WhatsApp"
     >
       <MessageCircle size={24} fill="white" />
