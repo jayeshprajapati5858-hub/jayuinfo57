@@ -7,7 +7,7 @@ export enum Category {
   CABLE = 'Cables'
 }
 
-export type Language = 'en';
+export type Language = 'en' | 'gu';
 
 export interface User {
   id: string;

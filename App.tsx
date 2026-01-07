@@ -14,7 +14,6 @@ import OrderTracker from './components/OrderTracker';
 import Toast from './components/Toast';
 import Footer from './components/Footer'; 
 import HeroSection from './components/HeroSection';
-import FlashSale from './components/FlashSale';
 import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
@@ -235,8 +234,6 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
         
-        <FlashSale />
-
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
