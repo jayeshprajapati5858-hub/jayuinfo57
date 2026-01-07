@@ -1,3 +1,4 @@
+
 import { Category, Product, Coupon } from './types';
 
 export const SHOP_NAME = "MobileHub";
@@ -67,69 +68,39 @@ export const PRODUCTS: Product[] = [
     category: Category.AUDIO,
     image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
     rating: 4.7,
-    stock: 30,
-    sales: 80,
+    stock: 75,
+    sales: 150,
     reviews: []
-  },
-  {
-      id: '6',
-      name: 'MagSafe Power Bank 10000mAh',
-      description: 'Magnetic wireless power bank for iPhone 12/13/14/15 series.',
-      price: 2999,
-      category: Category.CHARGER,
-      image: 'https://images.unsplash.com/photo-1616423641743-4f9e03d3f278?auto=format&fit=crop&w=800&q=80',
-      rating: 4.9,
-      stock: 40,
-      sales: 150,
-      reviews: []
   }
 ];
 
 export const TRANSLATIONS = {
   en: {
     shop_name: "MobileHub",
-    hero_title: "Protect & Power Your Digital Life",
-    hero_subtitle: "Discover premium glass covers, ultra-fast GaN chargers, and rugged cases.",
-    shop_now: "Shop Collection",
+    search_placeholder: "Search for chargers, cases...",
+    next_day_dispatch: "Next Day Dispatch",
     premium_collection: "Premium Collection",
+    return_policy: "7 Days Return",
     add_to_cart: "Add to Cart",
-    orders: "Orders",
-    cart: "Cart",
-    search_placeholder: "Search chargers, cases...",
-    flash_sale: "Flash Sale",
     style_matcher: "AI Style Matcher",
-    verify_product: "Verify Authenticity",
-    upload_outfit: "Upload Outfit Photo",
+    upload_outfit: "Upload your outfit to get matching accessories",
     analyzing: "Analyzing your style...",
     certificate_title: "Certificate of Authenticity",
-    verified_desc: "This product is verified as 100% original MobileHub gear.",
-    return_policy: "7 Days Return Policy",
-    return_desc: "Hassle-free 7 days replacement if product is damaged or defective.",
-    next_day_dispatch: "⚡ Next Day Dispatch",
-    order_via_whatsapp: "Order via WhatsApp",
-    whatsapp_skip_form: "Skip the form? Chat & Order instantly."
+    verified_desc: "This product is verified authentic.",
+    verify_product: "Verify Product",
   },
   gu: {
     shop_name: "મોબાઈલ હબ",
-    hero_title: "તમારા મોબાઈલ માટે બેસ્ટ એસેસરીઝ",
-    hero_subtitle: "પ્રીમિયમ ગ્લાસ કવર, ફાસ્ટ ચાર્જર અને મજબૂત કેસ ખરીદો.",
-    shop_now: "ખરીદી કરો",
-    premium_collection: "નવું કલેક્શન",
+    search_placeholder: "ચાર્જર, કેસ શોધો...",
+    next_day_dispatch: "બીજા દિવસે રવાનગી",
+    premium_collection: "પ્રીમિયમ કલેક્શન",
+    return_policy: "7 દિવસમાં રિટર્ન",
     add_to_cart: "કાર્ટમાં ઉમેરો",
-    orders: "ઓર્ડર",
-    cart: "કાર્ટ",
-    search_placeholder: "ચાર્જર, કવર શોધો...",
-    flash_sale: "ફ્લેશ સેલ",
-    style_matcher: "AI સ્ટાઈલ મેચર",
-    verify_product: "પ્રોડક્ટ ચેક કરો",
-    upload_outfit: "ફોટો અપલોડ કરો",
-    analyzing: "ચેક કરી રહ્યું છે...",
-    certificate_title: "અસલ પ્રોડક્ટ સર્ટિફિકેટ",
-    verified_desc: "આ પ્રોડક્ટ 100% ઓરિજિનલ મોબાઈલ હબની છે.",
-    return_policy: "7 દિવસની રિટર્ન પોલિસી",
-    return_desc: "જો પ્રોડક્ટમાં ખામી હોય તો 7 દિવસમાં બદલી આપવામાં આવશે.",
-    next_day_dispatch: "⚡ બીજા દિવસે ડિસ્પેચ",
-    order_via_whatsapp: "વોટ્સએપ દ્વારા ઓર્ડર કરો",
-    whatsapp_skip_form: "ફોર્મ ભરવું નથી? સીધો ચેટ કરો."
+    style_matcher: "AI સ્ટાઇલ મેચર",
+    upload_outfit: "મેચિંગ એક્સેસરીઝ મેળવવા માટે તમારો ફોટો અપલોડ કરો",
+    analyzing: "તમારી શૈલીનું વિશ્લેષણ કરી રહ્યા છીએ...",
+    certificate_title: "પ્રમાણભૂતતાનું પ્રમાણપત્ર",
+    verified_desc: "આ ઉત્પાદન ચકાસાયેલ અસલી છે.",
+    verify_product: "ઉત્પાદન ચકાસો",
   }
 };
