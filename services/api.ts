@@ -1,18 +1,28 @@
 
 import { Product, Order, Coupon, Review, User } from '../types';
 
-// Your VPS Backend IP
-const API_URL = 'http://152.53.240.143:5000/api'; 
+// Default to the VPS IP, but try to fetch from LocalStorage if set by Admin
+const DEFAULT_API_URL = 'http://152.53.240.143:5000/api'; 
+
+const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    const savedUrl = localStorage.getItem('mh_api_config_url');
+    if (savedUrl) return savedUrl.replace(/\/$/, ""); // Remove trailing slash
+  }
+  return DEFAULT_API_URL;
+};
 
 const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
 /**
  * Enhanced fetch with diagnostic logging and silent error handling
  */
-const fetchWithRetry = async (url: string, options: RequestInit = {}, timeout = 5000) => {
-  if (isHttps && url.startsWith('http:')) {
-    // We log this as a warning instead of error to be less aggressive
-    console.warn("MIXED CONTENT: Browser may block this HTTP call because the site is HTTPS.");
+const fetchWithRetry = async (endpoint: string, options: RequestInit = {}, timeout = 5000) => {
+  const baseUrl = getApiUrl();
+  const url = `${baseUrl}${endpoint}`;
+
+  if (isHttps && baseUrl.startsWith('http:')) {
+    console.warn(`MIXED CONTENT WARNING: Your site is HTTPS but trying to connect to HTTP backend (${baseUrl}). This request will likely fail on Vercel. Please update API URL in Admin Settings to an HTTPS domain.`);
   }
 
   const controller = new AbortController();
@@ -33,7 +43,7 @@ const fetchWithRetry = async (url: string, options: RequestInit = {}, timeout = 
     return response;
   } catch (error: any) {
     clearTimeout(id);
-    // Return a failed response object instead of throwing
+    console.error(`API Call Failed to ${url}:`, error.message);
     return { ok: false, statusText: error.message };
   }
 };
@@ -50,9 +60,19 @@ const handleResponse = async (response: any) => {
 };
 
 export const api = {
+  // Helper to get current URL for display
+  getCurrentUrl: () => getApiUrl(),
+
+  // Helper to set URL
+  setApiUrl: (url: string) => {
+    localStorage.setItem('mh_api_config_url', url);
+    window.location.reload();
+  },
+
   checkHealth: async () => {
     try {
-      const res = await fetch(`${API_URL}/products`, { method: 'HEAD', mode: 'cors' });
+      // We use a simple endpoint or just products to check if server is alive
+      const res = await fetch(`${getApiUrl()}/products`, { method: 'HEAD', mode: 'cors' });
       return res.ok;
     } catch (e) {
       return false;
@@ -61,13 +81,13 @@ export const api = {
 
   // USER METHODS
   getUsers: async (): Promise<User[]> => {
-    const res = await fetchWithRetry(`${API_URL}/users`);
+    const res = await fetchWithRetry(`/users`);
     const data = await handleResponse(res);
     return data || [];
   },
 
   createUser: async (user: User): Promise<User | null> => {
-    const res = await fetchWithRetry(`${API_URL}/users`, {
+    const res = await fetchWithRetry(`/users`, {
       method: 'POST',
       body: JSON.stringify(user),
     });
@@ -76,12 +96,12 @@ export const api = {
 
   // PRODUCT METHODS
   getProducts: async (): Promise<Product[] | null> => {
-    const res = await fetchWithRetry(`${API_URL}/products`);
+    const res = await fetchWithRetry(`/products`);
     return await handleResponse(res);
   },
 
   addProduct: async (product: Product): Promise<Product | null> => {
-    const res = await fetchWithRetry(`${API_URL}/products`, {
+    const res = await fetchWithRetry(`/products`, {
       method: 'POST',
       body: JSON.stringify(product),
     });
@@ -89,7 +109,7 @@ export const api = {
   },
 
   updateStock: async (id: string, stock: number): Promise<Product | null> => {
-    const res = await fetchWithRetry(`${API_URL}/products/${id}/stock`, {
+    const res = await fetchWithRetry(`/products/${id}/stock`, {
       method: 'PATCH',
       body: JSON.stringify({ stock }),
     });
@@ -98,13 +118,13 @@ export const api = {
 
   // ORDER METHODS
   getOrders: async (): Promise<Order[]> => {
-    const res = await fetchWithRetry(`${API_URL}/orders`);
+    const res = await fetchWithRetry(`/orders`);
     const data = await handleResponse(res);
     return data || [];
   },
 
   createOrder: async (order: Order): Promise<Order | null> => {
-    const res = await fetchWithRetry(`${API_URL}/orders`, {
+    const res = await fetchWithRetry(`/orders`, {
       method: 'POST',
       body: JSON.stringify(order),
     });
@@ -112,7 +132,7 @@ export const api = {
   },
 
   updateOrderStatus: async (id: string, status: string): Promise<Order | null> => {
-    const res = await fetchWithRetry(`${API_URL}/orders/${id}/status`, {
+    const res = await fetchWithRetry(`/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
