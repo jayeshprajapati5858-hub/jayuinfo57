@@ -206,14 +206,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] transition-colors duration-300 pb-20 md:pb-0 text-gray-900 dark:text-gray-100">
       
-      {/* GLOBAL SERVER STATUS WARNING */}
-      {isHttps && serverStatus === 'offline' && (
-        <div className="bg-amber-500 text-white text-[10px] md:text-xs py-2 px-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest z-[60] shadow-lg sticky top-0">
-          <AlertTriangle size={14} />
-          Server connection blocked: Please open this site with http:// protocol.
-        </div>
-      )}
-
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 

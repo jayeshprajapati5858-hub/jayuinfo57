@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Product, Order, Category, Coupon, Review, User } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, DollarSign, Users, Activity, Mail, Lock, Calendar, Globe, Wifi, WifiOff } from 'lucide-react';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 
 interface AdminDashboardProps {
@@ -37,7 +37,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users'>('orders');
   const [isUploading, setIsUploading] = useState(false);
-  const [liveVisitors, setLiveVisitors] = useState(Math.floor(Math.random() * 8) + 5);
   
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -54,17 +53,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '', image: '' });
   const [reviewImageFile, setReviewImageFile] = useState<File | null>(null);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountPercent: 10 });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveVisitors(prev => {
-        const change = Math.random() > 0.5 ? 1 : -1;
-        const newVal = prev + change;
-        return newVal < 3 ? 3 : newVal > 25 ? 20 : newVal;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const totalEarnings = orders
     .filter(o => o.status !== 'Rejected')
@@ -199,18 +187,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           
           <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-             <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 backdrop-blur-sm">
-                <div className="relative">
-                    <Activity className="text-green-400" size={18} />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-                </div>
-                <div>
-                    <p className="text-[10px] text-gray-400 leading-none">Live Visitors</p>
-                    <p className="font-bold text-white text-sm">{liveVisitors} Now</p>
-                </div>
-             </div>
-
             <div className="flex gap-4 md:gap-8">
               <div className="text-center md:text-right">
                 <p className="text-[10px] md:text-xs text-gray-400">Total Earnings</p>
@@ -226,32 +202,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Connection Diagnostics Bar */}
-        <div className={`mb-6 p-4 rounded-2xl border flex items-center justify-between transition-all ${
-          serverStatus === 'online' ? 'bg-green-500/10 border-green-500/20 text-green-700' :
-          serverStatus === 'offline' ? 'bg-red-500/10 border-red-500/20 text-red-700' :
-          'bg-gray-100 border-gray-200 text-gray-500'
-        }`}>
-          <div className="flex items-center gap-3">
-             <div className={`p-2 rounded-xl ${serverStatus === 'online' ? 'bg-green-500 text-white' : serverStatus === 'offline' ? 'bg-red-500 text-white' : 'bg-gray-300'}`}>
-                {serverStatus === 'online' ? <Wifi size={20}/> : serverStatus === 'offline' ? <WifiOff size={20}/> : <Loader2 size={20} className="animate-spin"/>}
-             </div>
-             <div>
-                <p className="text-xs font-black uppercase tracking-widest">VPS Connectivity Status</p>
-                <p className="text-sm font-bold">
-                   {serverStatus === 'online' ? 'Connected to 152.53.240.143:5000' : 
-                    serverStatus === 'offline' ? 'Connection Failed - Server unreachable' : 
-                    'Checking link status...'}
-                </p>
-             </div>
-          </div>
-          {serverStatus === 'offline' && (
-             <div className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase bg-red-500 text-white px-3 py-1.5 rounded-lg">
-                <X size={12}/> Browser blocked HTTP link (Check Console)
-             </div>
-          )}
-        </div>
-
+        
+        {/* Navigation Tabs */}
         <div className="grid grid-cols-2 md:flex md:gap-4 gap-2 mb-8">
           <button onClick={() => setActiveTab('orders')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'orders' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Package size={18} /> Orders
