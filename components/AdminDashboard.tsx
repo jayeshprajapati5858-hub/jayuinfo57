@@ -71,36 +71,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
-    let imageUrl = newProduct.image;
-    if (imageFile) {
-      try { imageUrl = await handleFileToUrl(imageFile); } 
-      catch { imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`; }
-    } else if (!imageUrl) {
-        imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`;
+    try {
+        let imageUrl = newProduct.image;
+        if (imageFile) {
+          try { imageUrl = await handleFileToUrl(imageFile); } 
+          catch { imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`; }
+        } else if (!imageUrl) {
+            imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`;
+        }
+
+        const product: Product = {
+          id: Date.now().toString(),
+          name: newProduct.name,
+          price: Number(newProduct.price),
+          category: newProduct.category,
+          description: newProduct.description,
+          image: imageUrl,
+          rating: 0,
+          stock: Number(newProduct.stock),
+          sales: 0,
+          reviews: []
+        };
+
+        // Await the add operation
+        await onAddProduct(product);
+        
+        setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: '', stock: 50, sales: 0 });
+        setImageFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error) {
+        console.error("Dashboard error:", error);
+    } finally {
+        setIsUploading(false);
     }
-
-    const product: Product = {
-      id: Date.now().toString(),
-      name: newProduct.name,
-      price: Number(newProduct.price),
-      category: newProduct.category,
-      description: newProduct.description,
-      image: imageUrl,
-      rating: 0,
-      stock: Number(newProduct.stock),
-      sales: 0,
-      reviews: []
-    };
-
-    // Await the add operation
-    await onAddProduct(product);
-    
-    // Only clear if successful? Ideally App.tsx handles errors, but here we just reset for now.
-    // In a real app we'd check return value, but App.tsx handles the Toast/Alert.
-    setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: '', stock: 50, sales: 0 });
-    setImageFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setIsUploading(false);
   };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -108,25 +111,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (!reviewModalOpen || !onAddReview) return;
 
       setIsUploading(true);
-      let reviewImg = '';
-      if (reviewImageFile) {
-          try { reviewImg = await handleFileToUrl(reviewImageFile); } catch {}
+      try {
+          let reviewImg = '';
+          if (reviewImageFile) {
+              try { reviewImg = await handleFileToUrl(reviewImageFile); } catch {}
+          }
+
+          const review: Review = {
+              id: Date.now().toString(),
+              userName: newReview.userName,
+              rating: Number(newReview.rating),
+              comment: newReview.comment,
+              date: new Date().toISOString().split('T')[0],
+              image: reviewImg || undefined
+          };
+
+          onAddReview(reviewModalOpen, review);
+          setReviewModalOpen(null);
+          setNewReview({ userName: '', rating: 5, comment: '', image: '' });
+          setReviewImageFile(null);
+      } finally {
+          setIsUploading(false);
       }
-
-      const review: Review = {
-          id: Date.now().toString(),
-          userName: newReview.userName,
-          rating: Number(newReview.rating),
-          comment: newReview.comment,
-          date: new Date().toISOString().split('T')[0],
-          image: reviewImg || undefined
-      };
-
-      onAddReview(reviewModalOpen, review);
-      setReviewModalOpen(null);
-      setNewReview({ userName: '', rating: 5, comment: '', image: '' });
-      setReviewImageFile(null);
-      setIsUploading(false);
   };
 
   const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

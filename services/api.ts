@@ -40,6 +40,9 @@ const ensureAuth = async () => {
   }
 };
 
+// Helper for timeout
+const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+
 export const api = {
   // Check connection to Firestore
   checkHealth: async () => {
@@ -120,21 +123,28 @@ export const api = {
       // Handle Image Upload
       if (product.image && product.image.startsWith('data:image')) {
         try {
-          // Attempt Storage Upload
+          // Attempt Storage Upload with 5s timeout race
+          // If storage takes too long or fails, we fall back to base64
           const timestamp = Date.now();
           const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
           const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
-          await uploadString(storageRef, product.image, 'data_url');
+          
+          await Promise.race([
+            uploadString(storageRef, product.image, 'data_url'),
+            timeout(5000) // 5 second timeout
+          ]);
+          
           imageUrl = await getDownloadURL(storageRef);
         } catch (storageError: any) {
-          console.error("Storage upload failed:", storageError);
+          console.error("Storage upload failed or timed out:", storageError);
           // Fallback: Use Base64 if small, else placeholder
           if (product.image.length < 500000) { // Limit to ~500KB for Firestore safety
              imageUrl = product.image;
+             console.log("Falling back to Base64 storage");
           } else {
              console.warn("Image too large for Firestore fallback. Using placeholder.");
              imageUrl = "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
-             alert("Warning: Image upload failed (Storage not configured?) and image was too large for database. A placeholder image was used.");
+             alert("Warning: Image upload failed (Network/Storage issue) and image was too large for database. A placeholder image was used.");
           }
         }
       }
@@ -152,7 +162,7 @@ export const api = {
       
       let msg = "Failed to add product. ";
       if (error.code === 'permission-denied') {
-        msg += "PERMISSION DENIED: Go to Firebase Console -> Firestore Database -> Rules. Change 'allow read, write: if false;' to 'allow read, write: if true;' (for testing) or 'if request.auth != null;'.";
+        msg += "PERMISSION DENIED: Go to Firebase Console -> Firestore Database -> Rules. Change 'allow read, write: if false;' to 'allow read, write: if true;'";
       } else if (error.code === 'unavailable') {
         msg += "Network Error. Please check your internet.";
       } else {

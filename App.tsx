@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import ProductCard from './components/ProductCard';
@@ -19,7 +20,7 @@ import SkeletonProduct from './components/SkeletonProduct';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, Language, User } from './types';
-import { Home, ShoppingBag, Package, AlertTriangle } from 'lucide-react';
+import { Home, ShoppingBag, Package, AlertTriangle, Zap, Shield, Smartphone } from 'lucide-react';
 import { api } from './services/api';
 
 const App: React.FC = () => {
@@ -58,6 +59,7 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [sortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
@@ -271,6 +273,7 @@ const App: React.FC = () => {
   };
 
   const filteredProducts = products
+    .filter(p => selectedCategory === 'All' || p.category === selectedCategory)
     .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
@@ -301,14 +304,33 @@ const App: React.FC = () => {
           language={language}
         />
         
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+        {/* Category Shortcuts - New Feature */}
+        <div className="grid grid-cols-3 gap-3 mb-8 animate-fadeInUp stagger-1">
+             <button onClick={() => setSelectedCategory(Category.CHARGER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.CHARGER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                 <Zap size={24} className={selectedCategory === Category.CHARGER ? 'text-yellow-300 fill-yellow-300' : 'text-primary'} />
+                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.CHARGER]}</span>
+             </button>
+             <button onClick={() => setSelectedCategory(Category.GLASS)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.GLASS ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                 <Shield size={24} className={selectedCategory === Category.GLASS ? 'text-white' : 'text-blue-500'} />
+                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.GLASS]}</span>
+             </button>
+             <button onClick={() => setSelectedCategory(Category.COVER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.COVER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                 <Smartphone size={24} className={selectedCategory === Category.COVER ? 'text-white' : 'text-purple-500'} />
+                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.COVER]}</span>
+             </button>
+        </div>
+
+        <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
-          </div>
+            {selectedCategory !== 'All' && (
+                <button onClick={() => setSelectedCategory('All')} className="text-xs font-bold text-primary hover:underline">
+                    View All
+                </button>
+            )}
         </div>
 
         <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-          {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.map(product => (
+          {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.length > 0 ? filteredProducts.map(product => (
             <ProductCard 
               key={product.id} 
               product={product} 
@@ -319,7 +341,13 @@ const App: React.FC = () => {
               onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
               language={language}
             />
-          ))}
+          )) : (
+            <div className="col-span-full py-12 text-center text-gray-400 flex flex-col items-center">
+                <Package size={48} className="mb-4 opacity-20" />
+                <p>No products found in this category.</p>
+                <button onClick={() => setSelectedCategory('All')} className="mt-4 text-primary font-bold">View All Products</button>
+            </div>
+          )}
         </div>
       </main>
 
