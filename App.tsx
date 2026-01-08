@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import ProductCard from './components/ProductCard';
@@ -35,7 +34,9 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [language] = useState<Language>('en'); 
+  // Default to Gujarati as requested
+  const [language, setLanguage] = useState<Language>('gu'); 
+
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme');
@@ -98,6 +99,10 @@ const App: React.FC = () => {
     window.addEventListener('hashchange', checkSecretPath);
     return () => window.removeEventListener('hashchange', checkSecretPath);
   }, []);
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'en' ? 'gu' : 'en');
+  };
 
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
@@ -287,10 +292,14 @@ const App: React.FC = () => {
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         language={language}
+        onToggleLanguage={toggleLanguage}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <HeroSection onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} />
+        <HeroSection 
+          onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
+          language={language}
+        />
         
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -308,6 +317,7 @@ const App: React.FC = () => {
               onBuyNow={(p) => buyNow(p)}
               onViewDetails={setSelectedProduct} 
               onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
+              language={language}
             />
           ))}
         </div>

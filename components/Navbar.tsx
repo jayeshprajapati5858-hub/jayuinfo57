@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock } from 'lucide-react';
+import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock, Languages } from 'lucide-react';
 import { Language, User } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -19,6 +18,7 @@ interface NavbarProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   language: Language;
+  onToggleLanguage: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -35,7 +35,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   darkMode,
   onToggleDarkMode,
-  language
+  language,
+  onToggleLanguage
 }) => {
   const t = TRANSLATIONS[language];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,7 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Logo Section - Updated as per request */}
+          {/* Logo Section */}
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-500/20 text-white transform group-hover:scale-105 transition-transform duration-300">
               <Smartphone size={24} className="relative z-10 drop-shadow-md" />
@@ -76,7 +77,13 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
-             {/* Admin Button (Visible on Desktop now) */}
+             {/* Language Toggle */}
+             <button onClick={onToggleLanguage} className="p-3 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all font-bold text-sm flex items-center gap-1">
+                <Languages size={20} />
+                {language === 'en' ? 'EN' : 'GU'}
+             </button>
+
+             {/* Admin Button */}
              <button onClick={onAdminClick} className="p-3 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all" title="Admin Access">
                 <Lock size={20} />
              </button>
@@ -122,6 +129,9 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Search Icon & Menu */}
           <div className="flex md:hidden items-center gap-4">
+            <button onClick={onToggleLanguage} className="text-gray-900 dark:text-white font-bold text-xs">
+              {language === 'en' ? 'EN' : 'GU'}
+            </button>
             <button onClick={onToggleDarkMode} className="text-gray-400">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
@@ -181,6 +191,10 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span className="text-xs font-bold dark:text-white">Wishlist</span>
                  </button>
               </div>
+
+              <button onClick={() => { onToggleLanguage(); setIsMenuOpen(false); }} className="w-full py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
+                 <Languages size={18} /> Switch Language ({language === 'en' ? 'English' : 'Gujarati'})
+              </button>
 
               <div className="pt-2">
                  <button onClick={() => { onAdminClick(); setIsMenuOpen(false); }} className="text-xs text-gray-400 font-medium text-center w-full flex items-center justify-center gap-2">

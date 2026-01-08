@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Product } from '../types';
+import { Product, Language } from '../types';
 import { Star, Heart, RotateCcw, Zap, ShoppingCart, ArrowRight } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
@@ -11,6 +10,7 @@ interface ProductCardProps {
   onBuyNow: (product: Product) => void;
   onViewDetails: (product: Product) => void;
   onToggleWishlist: (productId: string) => void;
+  language: Language;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ 
@@ -19,10 +19,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart, 
   onBuyNow,
   onViewDetails,
-  onToggleWishlist
+  onToggleWishlist,
+  language
 }) => {
   const isOutOfStock = product.stock === 0;
-  const t = TRANSLATIONS['en'];
+  const t = TRANSLATIONS[language];
 
   return (
     <div className={`group bg-white dark:bg-gray-900 rounded-[24px] sm:rounded-[32px] shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 overflow-hidden border border-gray-50 dark:border-gray-800 flex flex-col h-full ${isOutOfStock ? 'opacity-75' : ''} animate-fadeInUp`}>
@@ -48,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Dispatch Badge */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
           <div className="bg-green-500 text-white text-[7px] sm:text-[8px] font-black px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg w-fit uppercase tracking-tighter">
-            <RotateCcw size={8} /> 7 Days Return
+            <RotateCcw size={8} /> {t.return_policy}
           </div>
           <div className="bg-blue-600 text-white text-[7px] sm:text-[8px] font-black px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg w-fit uppercase tracking-tighter animate-[pulse-soft_2s_infinite]">
             <Zap size={8} fill="currentColor" /> {t.next_day_dispatch}
@@ -78,7 +79,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
               className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 ${isOutOfStock ? 'bg-gray-100 text-gray-400 border-gray-100 cursor-not-allowed' : 'bg-transparent border-gray-900 dark:border-primary text-gray-900 dark:text-white hover:bg-gray-900 dark:hover:bg-primary hover:text-white active:scale-95'}`}
             >
-              <ShoppingCart size={14} /> Add to Cart
+              <ShoppingCart size={14} /> {t.add_to_cart}
             </button>
             <button 
               disabled={isOutOfStock}
