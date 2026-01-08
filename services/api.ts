@@ -18,7 +18,8 @@ import {
   uploadString, 
   getDownloadURL 
 } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { signInAnonymously } from 'firebase/auth';
+import { db, storage, auth } from './firebase';
 import { Product, Order, User, Coupon, Review } from '../types';
 
 const USERS_COLLECTION = 'users';
@@ -26,10 +27,29 @@ const PRODUCTS_COLLECTION = 'products';
 const ORDERS_COLLECTION = 'orders';
 const COUPONS_COLLECTION = 'coupons';
 
+// Helper to ensure user is authenticated before writing data
+const ensureAuth = async () => {
+  if (!auth.currentUser) {
+    try {
+      await signInAnonymously(auth);
+      console.log("Signed in anonymously for database access");
+    } catch (error: any) {
+      // If Anonymous Auth is disabled in Console, we catch the error and proceed.
+      // This allows the app to work if Firestore Rules are set to public (Test Mode).
+      if (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed') {
+        console.warn("WARNING: Anonymous Auth disabled in Firebase Console. Attempting public access.");
+        return; 
+      }
+      console.error("Auth Error:", error);
+    }
+  }
+};
+
 export const api = {
   // Check connection to Firestore
   checkHealth: async () => {
     try {
+      await ensureAuth();
       // Optimized ping
       const q = query(collection(db, PRODUCTS_COLLECTION), limit(1));
       await getDocs(q);
@@ -42,14 +62,13 @@ export const api = {
   },
 
   // --- DATABASE SEEDING ---
-  // This uploads all local default products to Firebase if the DB is empty
   seedProducts: async (products: Product[]): Promise<boolean> => {
+    await ensureAuth();
     console.log("Attempting to seed database with", products.length, "products...");
     try {
       const batch = writeBatch(db);
       
       products.forEach((product) => {
-        // Create a reference with the specific ID
         const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
         batch.set(docRef, product);
       });
@@ -59,9 +78,6 @@ export const api = {
       return true;
     } catch (error: any) {
       console.error("Error seeding database:", error);
-      if (error.code === 'permission-denied') {
-        console.error("PERMISSION DENIED: Check your Firestore Security Rules in Firebase Console.");
-      }
       return false;
     }
   },
@@ -78,6 +94,7 @@ export const api = {
   },
 
   createUser: async (user: User): Promise<User | null> => {
+    await ensureAuth();
     try {
       const userRef = doc(collection(db, USERS_COLLECTION));
       const newUser = { ...user, id: userRef.id };
@@ -95,7 +112,6 @@ export const api = {
       const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name')); 
       const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Product));
-      console.log("Fetched products from Firebase:", data.length);
       return data;
     } catch (error) {
       console.error("Error getting products:", error);
@@ -104,25 +120,28 @@ export const api = {
   },
 
   addProduct: async (product: Product): Promise<Product | null> => {
+    await ensureAuth();
     try {
-      let imageUrl = product.image;
+      let imageUrl = product.image || "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
 
       // Check if image is Base64 (starts with data:image) and upload to Storage
-      if (imageUrl && imageUrl.startsWith('data:image')) {
+      if (product.image && product.image.startsWith('data:image')) {
         try {
           const timestamp = Date.now();
           const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
           const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
           
-          await uploadString(storageRef, imageUrl, 'data_url');
+          await uploadString(storageRef, product.image, 'data_url');
           imageUrl = await getDownloadURL(storageRef);
         } catch (storageError) {
           console.error("Storage upload failed, attempting fallback:", storageError);
           // Fallback: If image is small enough (< 800KB), save base64 directly to Firestore
-          // Otherwise use a placeholder to prevent saving failure
-          if (imageUrl.length > 800000) {
+          if (product.image.length < 800000) {
+             imageUrl = product.image;
+          } else {
+             // If too big and storage failed, use a placeholder so product is still saved
              imageUrl = "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
-             console.warn("Image too large for Firestore fallback. Using placeholder.");
+             console.warn("Image too large for Firestore fallback & Storage failed. Using placeholder.");
           }
         }
       }
@@ -133,13 +152,19 @@ export const api = {
       await setDoc(docRef, productToSave);
       
       return productToSave;
-    } catch (error) {
-      console.error("Error adding product:", error);
+    } catch (error: any) {
+      console.error("Detailed Error adding product:", error.code, error.message);
+      if (error.code === 'permission-denied') {
+        alert("Permission Denied: Go to Firebase Console > Firestore Database > Rules and allow read/write access (or enable Anonymous Auth).");
+      } else if (error.code === 'unavailable') {
+        alert("Firebase Offline: Please check your internet connection.");
+      }
       return null;
     }
   },
 
   updateStock: async (id: string, stock: number): Promise<boolean> => {
+    await ensureAuth();
     try {
       const productRef = doc(db, PRODUCTS_COLLECTION, id);
       await updateDoc(productRef, { stock });
@@ -151,6 +176,7 @@ export const api = {
   },
 
   deleteProduct: async (id: string): Promise<boolean> => {
+    await ensureAuth();
     try {
       await deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
       return true;
@@ -173,6 +199,7 @@ export const api = {
   },
 
   createOrder: async (order: Order): Promise<Order | null> => {
+    await ensureAuth();
     try {
       await setDoc(doc(db, ORDERS_COLLECTION, order.id), order);
       return order;
@@ -183,6 +210,7 @@ export const api = {
   },
 
   updateOrderStatus: async (id: string, status: string): Promise<boolean> => {
+    await ensureAuth();
     try {
       const orderRef = doc(db, ORDERS_COLLECTION, id);
       await updateDoc(orderRef, { status });
@@ -204,6 +232,7 @@ export const api = {
   },
 
   addCoupon: async (coupon: Coupon): Promise<boolean> => {
+    await ensureAuth();
     try {
       await setDoc(doc(db, COUPONS_COLLECTION, coupon.code), coupon);
       return true;
@@ -213,6 +242,7 @@ export const api = {
   },
 
   deleteCoupon: async (code: string): Promise<boolean> => {
+    await ensureAuth();
     try {
       await deleteDoc(doc(db, COUPONS_COLLECTION, code));
       return true;
