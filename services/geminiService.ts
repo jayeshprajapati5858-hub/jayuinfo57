@@ -1,6 +1,8 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCTS } from '../constants';
+
+// Declare process to prevent TypeScript build errors
+declare var process: any;
 
 const getAIInstance = () => {
   const apiKey = process.env.API_KEY;
