@@ -11,7 +11,7 @@ interface AdminDashboardProps {
   users: User[];
   serverStatus?: 'online' | 'offline' | 'checking';
   onUpdateOrderStatus: (orderId: string, status: 'Shipped' | 'Rejected') => void;
-  onAddProduct: (product: Product) => void;
+  onAddProduct: (product: Product) => Promise<void> | void; // Allow promise
   onDeleteProduct: (productId: string) => void;
   onUpdateStock: (productId: string, newStock: number) => void;
   onAddCoupon: (coupon: Coupon) => void;
@@ -92,7 +92,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       reviews: []
     };
 
-    onAddProduct(product);
+    // Await the add operation
+    await onAddProduct(product);
+    
+    // Only clear if successful? Ideally App.tsx handles errors, but here we just reset for now.
+    // In a real app we'd check return value, but App.tsx handles the Toast/Alert.
     setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: '', stock: 50, sales: 0 });
     setImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -317,7 +321,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </label>
                 </div>
                 <button type="submit" disabled={isUploading} className="w-full bg-gray-900 dark:bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                  {isUploading ? <Loader2 className="animate-spin" /> : <Plus size={20} />} Add Product
+                  {isUploading ? <Loader2 className="animate-spin" /> : <Plus size={20} />} {isUploading ? "Uploading..." : "Add Product"}
                 </button>
               </form>
             </div>

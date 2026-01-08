@@ -4,7 +4,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  deleteDoc,
+  deleteDoc, 
   doc, 
   setDoc, 
   query, 
@@ -29,19 +29,14 @@ const COUPONS_COLLECTION = 'coupons';
 
 // Helper to ensure user is authenticated before writing data
 const ensureAuth = async () => {
-  if (!auth.currentUser) {
-    try {
-      await signInAnonymously(auth);
-      console.log("Signed in anonymously for database access");
-    } catch (error: any) {
-      // If Anonymous Auth is disabled in Console, we catch the error and proceed.
-      // This allows the app to work if Firestore Rules are set to public (Test Mode).
-      if (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed') {
-        console.warn("WARNING: Anonymous Auth disabled in Firebase Console. Attempting public access.");
-        return; 
-      }
-      console.error("Auth Error:", error);
-    }
+  if (auth.currentUser) return;
+  
+  try {
+    await signInAnonymously(auth);
+    console.log("Signed in anonymously for database access");
+  } catch (error: any) {
+    console.error("Auth Error:", error);
+    // Continue even if auth fails, as rules might be public
   }
 };
 
@@ -50,7 +45,6 @@ export const api = {
   checkHealth: async () => {
     try {
       await ensureAuth();
-      // Optimized ping
       const q = query(collection(db, PRODUCTS_COLLECTION), limit(1));
       await getDocs(q);
       console.log("Firebase Health Check: SUCCESS");
@@ -64,15 +58,13 @@ export const api = {
   // --- DATABASE SEEDING ---
   seedProducts: async (products: Product[]): Promise<boolean> => {
     await ensureAuth();
-    console.log("Attempting to seed database with", products.length, "products...");
+    console.log("Attempting to seed database...");
     try {
       const batch = writeBatch(db);
-      
       products.forEach((product) => {
         const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
         batch.set(docRef, product);
       });
-
       await batch.commit();
       console.log("Database seeded SUCCESSFULLY");
       return true;
@@ -121,44 +113,53 @@ export const api = {
 
   addProduct: async (product: Product): Promise<Product | null> => {
     await ensureAuth();
+    
     try {
       let imageUrl = product.image || "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
 
-      // Check if image is Base64 (starts with data:image) and upload to Storage
+      // Handle Image Upload
       if (product.image && product.image.startsWith('data:image')) {
         try {
+          // Attempt Storage Upload
           const timestamp = Date.now();
           const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
           const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
-          
           await uploadString(storageRef, product.image, 'data_url');
           imageUrl = await getDownloadURL(storageRef);
-        } catch (storageError) {
-          console.error("Storage upload failed, attempting fallback:", storageError);
-          // Fallback: If image is small enough (< 800KB), save base64 directly to Firestore
-          if (product.image.length < 800000) {
+        } catch (storageError: any) {
+          console.error("Storage upload failed:", storageError);
+          // Fallback: Use Base64 if small, else placeholder
+          if (product.image.length < 500000) { // Limit to ~500KB for Firestore safety
              imageUrl = product.image;
           } else {
-             // If too big and storage failed, use a placeholder so product is still saved
+             console.warn("Image too large for Firestore fallback. Using placeholder.");
              imageUrl = "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
-             console.warn("Image too large for Firestore fallback & Storage failed. Using placeholder.");
+             alert("Warning: Image upload failed (Storage not configured?) and image was too large for database. A placeholder image was used.");
           }
         }
       }
 
       const productToSave = { ...product, image: imageUrl };
       
+      // Save to Firestore
       const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
       await setDoc(docRef, productToSave);
       
       return productToSave;
+
     } catch (error: any) {
-      console.error("Detailed Error adding product:", error.code, error.message);
+      console.error("Detailed Error adding product:", error);
+      
+      let msg = "Failed to add product. ";
       if (error.code === 'permission-denied') {
-        alert("Permission Denied: Go to Firebase Console > Firestore Database > Rules and allow read/write access (or enable Anonymous Auth).");
+        msg += "PERMISSION DENIED: Go to Firebase Console -> Firestore Database -> Rules. Change 'allow read, write: if false;' to 'allow read, write: if true;' (for testing) or 'if request.auth != null;'.";
       } else if (error.code === 'unavailable') {
-        alert("Firebase Offline: Please check your internet connection.");
+        msg += "Network Error. Please check your internet.";
+      } else {
+        msg += error.message;
       }
+      alert(msg);
+      
       return null;
     }
   },
