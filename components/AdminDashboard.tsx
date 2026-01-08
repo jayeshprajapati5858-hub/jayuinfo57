@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Product, Order, Category, Coupon, Review, User } from '../types';
 import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
@@ -37,6 +37,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users'>('orders');
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -94,6 +95,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onAddProduct(product);
     setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: '', stock: 50, sales: 0 });
     setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsUploading(false);
   };
 
@@ -309,7 +311,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
                 <textarea required rows={2} placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
                 <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 text-center">
-                    <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" id="prod-img" />
+                    <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" id="prod-img" ref={fileInputRef} />
                     <label htmlFor="prod-img" className="cursor-pointer flex flex-col items-center gap-2">
                         {imageFile ? <div className="text-green-600 dark:text-green-400 font-medium truncate w-full">{imageFile.name}</div> : <><ImageIcon className="text-gray-400" /> <span className="text-sm text-gray-500">Click to upload image</span></>}
                     </label>

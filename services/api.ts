@@ -109,11 +109,22 @@ export const api = {
 
       // Check if image is Base64 (starts with data:image) and upload to Storage
       if (imageUrl && imageUrl.startsWith('data:image')) {
-        const timestamp = Date.now();
-        const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-        const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
-        await uploadString(storageRef, imageUrl, 'data_url');
-        imageUrl = await getDownloadURL(storageRef);
+        try {
+          const timestamp = Date.now();
+          const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+          const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
+          
+          await uploadString(storageRef, imageUrl, 'data_url');
+          imageUrl = await getDownloadURL(storageRef);
+        } catch (storageError) {
+          console.error("Storage upload failed, attempting fallback:", storageError);
+          // Fallback: If image is small enough (< 800KB), save base64 directly to Firestore
+          // Otherwise use a placeholder to prevent saving failure
+          if (imageUrl.length > 800000) {
+             imageUrl = "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
+             console.warn("Image too large for Firestore fallback. Using placeholder.");
+          }
+        }
       }
 
       const productToSave = { ...product, image: imageUrl };
