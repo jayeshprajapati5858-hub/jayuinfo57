@@ -192,6 +192,15 @@ const App: React.FC = () => {
     return false;
   };
 
+  const handleResetPassword = async (email: string) => {
+    const userExists = users.some(u => u.email === email);
+    if (userExists) {
+        showToast("Password reset link sent to your email!");
+        return true;
+    }
+    return false;
+  };
+
   // --- Admin Handlers (Persist to Firebase) ---
   
   const handleAddProduct = async (product: Product) => {
@@ -379,6 +388,7 @@ const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)} 
         onLogin={handleLogin}
         onSignup={handleSignup}
+        onResetPassword={handleResetPassword}
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
