@@ -71,13 +71,49 @@ export const PRODUCTS: Product[] = [
     stock: 75,
     sales: 150,
     reviews: []
+  },
+  {
+    id: '6',
+    name: '33W Turbo Charger',
+    description: 'Fast charging adapter for Android & iPhone. Compact design.',
+    price: 999,
+    category: Category.CHARGER,
+    image: 'https://images.unsplash.com/photo-1625656720875-9e63b392120e?auto=format&fit=crop&w=800&q=80',
+    rating: 4.5,
+    stock: 80,
+    sales: 90,
+    reviews: []
+  },
+  {
+    id: '7',
+    name: 'Matte Privacy Glass Guard',
+    description: 'Anti-spy tempered glass with matte finish for smooth touch.',
+    price: 399,
+    category: Category.GLASS,
+    image: 'https://plus.unsplash.com/premium_photo-1673966522361-26c35c6046e7?auto=format&fit=crop&w=800&q=80',
+    rating: 4.3,
+    stock: 120,
+    sales: 180,
+    reviews: []
+  },
+  {
+    id: '8',
+    name: 'Rugged Armor Back Cover',
+    description: 'Heavy duty protection with carbon fiber texture.',
+    price: 599,
+    category: Category.COVER,
+    image: 'https://images.unsplash.com/photo-1601593346740-925612772716?auto=format&fit=crop&w=800&q=80',
+    rating: 4.6,
+    stock: 60,
+    sales: 110,
+    reviews: []
   }
 ];
 
 export const TRANSLATIONS = {
   en: {
     shop_name: "MobileHub",
-    search_placeholder: "Search for chargers, cases...",
+    search_placeholder: "Search for chargers, glass, cases...",
     next_day_dispatch: "Next Day Dispatch",
     premium_collection: "Premium Collection",
     return_policy: "7 Days Return",
@@ -91,7 +127,7 @@ export const TRANSLATIONS = {
   },
   gu: {
     shop_name: "મોબાઈલ હબ",
-    search_placeholder: "ચાર્જર, કેસ શોધો...",
+    search_placeholder: "ચાર્જર, ગ્લાસ, કવર શોધો...",
     next_day_dispatch: "બીજા દિવસે રવાનગી",
     premium_collection: "પ્રીમિયમ કલેક્શન",
     return_policy: "7 દિવસમાં રિટર્ન",

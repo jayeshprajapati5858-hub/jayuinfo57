@@ -1,11 +1,26 @@
+import * as firebaseApp from "firebase/app";
+import * as firestore from "firebase/firestore";
+import * as firebaseStorage from "firebase/storage";
+import * as firebaseAnalytics from "firebase/analytics";
 
-// Firebase has been removed as requested.
-// PostgreSQL Connection Configuration
-export const DB_CONFIG = {
-  connectionString: "postgresql://ashish:ashish@152.53.240.143:5432/jayuinfo",
-  type: "postgres",
-  note: "This connection string should be used in a backend server (Node.js/Express), not directly in the browser."
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDZKzCvfIoPfYa0s7On96Aip3yu43SoZ1U",
+  authDomain: "jayuinfo-fcc46.firebaseapp.com",
+  databaseURL: "https://jayuinfo-fcc46-default-rtdb.firebaseio.com",
+  projectId: "jayuinfo-fcc46",
+  storageBucket: "jayuinfo-fcc46.firebasestorage.app",
+  messagingSenderId: "865389066090",
+  appId: "1:865389066090:web:4127315650f0f4d47e5713",
+  measurementId: "G-BLCMRRTMPR"
 };
 
-// Application is currently running in local mode
-export const isOfflineMode = true;
+// Initialize Firebase
+const app = firebaseApp.initializeApp(firebaseConfig);
+const analytics = firebaseAnalytics.getAnalytics(app);
+
+// Initialize Services
+export const db = firestore.getFirestore(app);
+export const storage = firebaseStorage.getStorage(app);
+
+export default app;

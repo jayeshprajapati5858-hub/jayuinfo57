@@ -1,141 +1,215 @@
+import * as Firestore from 'firebase/firestore';
+import * as Storage from 'firebase/storage';
+import { db, storage } from './firebase';
+import { Product, Order, User, Coupon, Review } from '../types';
 
-import { Product, Order, Coupon, Review, User } from '../types';
+const { 
+  collection, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  doc, 
+  setDoc, 
+  query, 
+  orderBy,
+  getDoc,
+  limit,
+  writeBatch
+} = Firestore;
 
-// Default to the VPS IP, but try to fetch from LocalStorage if set by Admin
-const DEFAULT_API_URL = 'http://152.53.240.143:5000/api'; 
+const { 
+  ref, 
+  uploadString, 
+  getDownloadURL 
+} = Storage;
 
-const getApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    const savedUrl = localStorage.getItem('mh_api_config_url');
-    if (savedUrl) return savedUrl.replace(/\/$/, ""); // Remove trailing slash
-  }
-  return DEFAULT_API_URL;
-};
-
-const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-
-/**
- * Enhanced fetch with diagnostic logging and silent error handling
- */
-const fetchWithRetry = async (endpoint: string, options: RequestInit = {}, timeout = 5000) => {
-  const baseUrl = getApiUrl();
-  const url = `${baseUrl}${endpoint}`;
-
-  if (isHttps && baseUrl.startsWith('http:')) {
-    console.warn(`MIXED CONTENT WARNING: Your site is HTTPS but trying to connect to HTTP backend (${baseUrl}). This request will likely fail on Vercel. Please update API URL in Admin Settings to an HTTPS domain.`);
-  }
-
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error: any) {
-    clearTimeout(id);
-    console.error(`API Call Failed to ${url}:`, error.message);
-    return { ok: false, statusText: error.message };
-  }
-};
-
-const handleResponse = async (response: any) => {
-  if (!response || response.ok === false) {
-    return null;
-  }
-  try {
-    return await response.json();
-  } catch (e) {
-    return null;
-  }
-};
+const USERS_COLLECTION = 'users';
+const PRODUCTS_COLLECTION = 'products';
+const ORDERS_COLLECTION = 'orders';
+const COUPONS_COLLECTION = 'coupons';
 
 export const api = {
-  // Helper to get current URL for display
-  getCurrentUrl: () => getApiUrl(),
-
-  // Helper to set URL
-  setApiUrl: (url: string) => {
-    localStorage.setItem('mh_api_config_url', url);
-    window.location.reload();
-  },
-
+  // Check connection to Firestore
   checkHealth: async () => {
     try {
-      // We use a simple endpoint or just products to check if server is alive
-      const res = await fetch(`${getApiUrl()}/products`, { method: 'HEAD', mode: 'cors' });
-      return res.ok;
+      // Optimized ping
+      const q = query(collection(db, PRODUCTS_COLLECTION), limit(1));
+      await getDocs(q);
+      console.log("Firebase Health Check: SUCCESS");
+      return true;
+    } catch (e: any) {
+      console.error("Firebase Health Check FAILED:", e.message);
+      return false;
+    }
+  },
+
+  // --- DATABASE SEEDING ---
+  // This uploads all local default products to Firebase if the DB is empty
+  seedProducts: async (products: Product[]): Promise<boolean> => {
+    console.log("Attempting to seed database with", products.length, "products...");
+    try {
+      const batch = writeBatch(db);
+      
+      products.forEach((product) => {
+        // Create a reference with the specific ID
+        const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
+        batch.set(docRef, product);
+      });
+
+      await batch.commit();
+      console.log("Database seeded SUCCESSFULLY");
+      return true;
+    } catch (error: any) {
+      console.error("Error seeding database:", error);
+      if (error.code === 'permission-denied') {
+        console.error("PERMISSION DENIED: Check your Firestore Security Rules in Firebase Console.");
+      }
+      return false;
+    }
+  },
+
+  // --- USERS ---
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
+      return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+    } catch (error) {
+      console.error("Error getting users:", error);
+      return [];
+    }
+  },
+
+  createUser: async (user: User): Promise<User | null> => {
+    try {
+      const userRef = doc(collection(db, USERS_COLLECTION));
+      const newUser = { ...user, id: userRef.id };
+      await setDoc(userRef, newUser);
+      return newUser;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      return null;
+    }
+  },
+
+  // --- PRODUCTS ---
+  getProducts: async (): Promise<Product[] | null> => {
+    try {
+      const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name')); 
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Product));
+      console.log("Fetched products from Firebase:", data.length);
+      return data;
+    } catch (error) {
+      console.error("Error getting products:", error);
+      return null;
+    }
+  },
+
+  addProduct: async (product: Product): Promise<Product | null> => {
+    try {
+      let imageUrl = product.image;
+
+      // Check if image is Base64 (starts with data:image) and upload to Storage
+      if (imageUrl && imageUrl.startsWith('data:image')) {
+        const timestamp = Date.now();
+        const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+        const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
+        await uploadString(storageRef, imageUrl, 'data_url');
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
+      const productToSave = { ...product, image: imageUrl };
+      
+      const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
+      await setDoc(docRef, productToSave);
+      
+      return productToSave;
+    } catch (error) {
+      console.error("Error adding product:", error);
+      return null;
+    }
+  },
+
+  updateStock: async (id: string, stock: number): Promise<boolean> => {
+    try {
+      const productRef = doc(db, PRODUCTS_COLLECTION, id);
+      await updateDoc(productRef, { stock });
+      return true;
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      return false;
+    }
+  },
+
+  deleteProduct: async (id: string): Promise<boolean> => {
+    try {
+      await deleteDoc(doc(db, PRODUCTS_COLLECTION, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      return false;
+    }
+  },
+
+  // --- ORDERS ---
+  getOrders: async (): Promise<Order[]> => {
+    try {
+      const q = query(collection(db, ORDERS_COLLECTION), orderBy('date', 'desc'));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+    } catch (error) {
+      console.error("Error getting orders:", error);
+      return [];
+    }
+  },
+
+  createOrder: async (order: Order): Promise<Order | null> => {
+    try {
+      await setDoc(doc(db, ORDERS_COLLECTION, order.id), order);
+      return order;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      return null;
+    }
+  },
+
+  updateOrderStatus: async (id: string, status: string): Promise<boolean> => {
+    try {
+      const orderRef = doc(db, ORDERS_COLLECTION, id);
+      await updateDoc(orderRef, { status });
+      return true;
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      return false;
+    }
+  },
+
+  // --- COUPONS ---
+  getCoupons: async (): Promise<Coupon[]> => {
+    try {
+      const snapshot = await getDocs(collection(db, COUPONS_COLLECTION));
+      return snapshot.docs.map(doc => doc.data() as Coupon);
+    } catch (e) {
+      return [];
+    }
+  },
+
+  addCoupon: async (coupon: Coupon): Promise<boolean> => {
+    try {
+      await setDoc(doc(db, COUPONS_COLLECTION, coupon.code), coupon);
+      return true;
     } catch (e) {
       return false;
     }
   },
 
-  // USER METHODS
-  getUsers: async (): Promise<User[]> => {
-    const res = await fetchWithRetry(`/users`);
-    const data = await handleResponse(res);
-    return data || [];
-  },
-
-  createUser: async (user: User): Promise<User | null> => {
-    const res = await fetchWithRetry(`/users`, {
-      method: 'POST',
-      body: JSON.stringify(user),
-    });
-    return await handleResponse(res);
-  },
-
-  // PRODUCT METHODS
-  getProducts: async (): Promise<Product[] | null> => {
-    const res = await fetchWithRetry(`/products`);
-    return await handleResponse(res);
-  },
-
-  addProduct: async (product: Product): Promise<Product | null> => {
-    const res = await fetchWithRetry(`/products`, {
-      method: 'POST',
-      body: JSON.stringify(product),
-    });
-    return await handleResponse(res);
-  },
-
-  updateStock: async (id: string, stock: number): Promise<Product | null> => {
-    const res = await fetchWithRetry(`/products/${id}/stock`, {
-      method: 'PATCH',
-      body: JSON.stringify({ stock }),
-    });
-    return await handleResponse(res);
-  },
-
-  // ORDER METHODS
-  getOrders: async (): Promise<Order[]> => {
-    const res = await fetchWithRetry(`/orders`);
-    const data = await handleResponse(res);
-    return data || [];
-  },
-
-  createOrder: async (order: Order): Promise<Order | null> => {
-    const res = await fetchWithRetry(`/orders`, {
-      method: 'POST',
-      body: JSON.stringify(order),
-    });
-    return await handleResponse(res);
-  },
-
-  updateOrderStatus: async (id: string, status: string): Promise<Order | null> => {
-    const res = await fetchWithRetry(`/orders/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-    return await handleResponse(res);
-  },
+  deleteCoupon: async (code: string): Promise<boolean> => {
+    try {
+      await deleteDoc(doc(db, COUPONS_COLLECTION, code));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 };

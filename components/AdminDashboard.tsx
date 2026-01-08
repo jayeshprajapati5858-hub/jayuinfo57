@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Product, Order, Category, Coupon, Review, User } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Settings, Server, Globe, Save } from 'lucide-react';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
-import { api } from '../services/api';
 
 interface AdminDashboardProps {
   orders: Order[];
@@ -36,16 +35,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddReview,
   onClose 
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users'>('orders');
   const [isUploading, setIsUploading] = useState(false);
   
-  // Settings State
-  const [apiUrl, setApiUrl] = useState('');
-  
-  useEffect(() => {
-    setApiUrl(api.getCurrentUrl());
-  }, []);
-
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -146,11 +138,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setNewCoupon({ code: '', discountPercent: 10 });
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    api.setApiUrl(apiUrl);
-  };
-
   const handlePrintOrder = (order: Order) => {
     const printWindow = window.open('', '', 'width=800,height=600');
     if (!printWindow) return;
@@ -202,7 +189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${serverStatus === 'online' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                <Server size={14} />
-               {serverStatus === 'online' ? 'Server Connected' : 'Offline Mode'}
+               {serverStatus === 'online' ? 'Firebase Connected' : 'Checking...'}
             </div>
             <div className="flex gap-4 md:gap-8">
               <div className="text-center md:text-right">
@@ -234,50 +221,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <button onClick={() => setActiveTab('users')} className={`flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'users' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Users size={18} /> Users
           </button>
-          <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'settings' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
-            <Settings size={18} /> Settings
-          </button>
         </div>
-
-        {/* SETTINGS TAB */}
-        {activeTab === 'settings' && (
-           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex items-center gap-3 mb-6">
-                 <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full">
-                    <Globe size={24} className="text-gray-900 dark:text-white" />
-                 </div>
-                 <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Connection Settings</h2>
-                    <p className="text-sm text-gray-500">Manage how the app connects to your VPS server.</p>
-                 </div>
-              </div>
-
-              <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Backend API URL</label>
-                    <div className="flex gap-2">
-                       <input 
-                         type="url" 
-                         value={apiUrl} 
-                         onChange={(e) => setApiUrl(e.target.value)} 
-                         placeholder="http://152.53.240.143:5000/api"
-                         className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 font-mono text-sm"
-                       />
-                       <button type="submit" className="px-6 py-3 bg-primary text-white font-bold rounded-xl flex items-center gap-2 hover:bg-blue-700 transition-colors">
-                          <Save size={18} /> Save
-                       </button>
-                    </div>
-                    <p className="text-xs text-gray-500 leading-relaxed">
-                       <strong>Current Status:</strong> {serverStatus === 'online' ? <span className="text-green-600 font-bold">Connected</span> : <span className="text-red-500 font-bold">Disconnected</span>}
-                       <br/><br/>
-                       <strong>Note for Vercel/Production:</strong> If your website is on Vercel (HTTPS), you must use an HTTPS URL here (e.g., <code>https://api.yourdomain.com</code>). Vercel blocks connections to HTTP IPs (Mixed Content).
-                       <br/>
-                       <strong>Note for Local/VPS:</strong> You can use <code>http://152.53.240.143:5000/api</code> if you are testing locally or if you disable security in browser.
-                    </p>
-                 </div>
-              </form>
-           </div>
-        )}
 
         {activeTab === 'orders' && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -461,7 +405,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="flex items-center gap-3">
                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs uppercase">
                                   {user.name[0]}
-                               </div>
+                                </div>
                                <div className="font-medium dark:text-white">{user.name}</div>
                             </div>
                          </td>

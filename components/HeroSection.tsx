@@ -24,12 +24,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
         </div>
         
         <h1 className="text-3xl md:text-5xl font-black mb-4 leading-none italic uppercase tracking-tighter animate-fadeInUp stagger-2">
-          Power Your <br />
-          <span className="text-primary">Digital Life</span>
+          Chargers, Glass <br />
+          <span className="text-primary">& Covers</span>
         </h1>
         
         <p className="text-gray-400 text-sm md:text-lg mb-8 max-w-md animate-fadeInUp stagger-3">
-          Discover high-performance chargers and ultra-rugged covers. Delivered to your doorstep by tomorrow.
+          Discover high-performance chargers, tough glass screen guards, and stylish covers. Delivered to your doorstep fast.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 animate-fadeInUp stagger-3">
@@ -37,7 +37,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
             onClick={onShopNow}
             className="px-8 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/30 flex items-center justify-center gap-2 group transition-all hover:scale-105 active:scale-95 overflow-hidden relative"
           >
-            <span className="relative z-10 flex items-center gap-2">Shop Now <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></span>
+            <span className="relative z-10 flex items-center gap-2">Shop Accessories <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></span>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite_linear]" />
           </button>
         </div>
