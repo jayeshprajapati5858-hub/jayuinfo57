@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X } from 'lucide-react';
+import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock } from 'lucide-react';
 import { Language, User } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -76,6 +76,11 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
+             {/* Admin Button (Visible on Desktop now) */}
+             <button onClick={onAdminClick} className="p-3 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all" title="Admin Access">
+                <Lock size={20} />
+             </button>
+
              <button onClick={onToggleDarkMode} className="p-3 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
              </button>
@@ -178,7 +183,9 @@ const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               <div className="pt-2">
-                 <button onClick={() => { onAdminClick(); setIsMenuOpen(false); }} className="text-xs text-gray-400 font-medium text-center w-full">Admin Access</button>
+                 <button onClick={() => { onAdminClick(); setIsMenuOpen(false); }} className="text-xs text-gray-400 font-medium text-center w-full flex items-center justify-center gap-2">
+                    <Lock size={12} /> Admin Access
+                 </button>
               </div>
            </div>
         </div>

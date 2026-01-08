@@ -1,9 +1,5 @@
-import * as Firestore from 'firebase/firestore';
-import * as Storage from 'firebase/storage';
-import { db, storage } from './firebase';
-import { Product, Order, User, Coupon, Review } from '../types';
 
-const { 
+import { 
   collection, 
   getDocs, 
   addDoc, 
@@ -16,13 +12,14 @@ const {
   getDoc,
   limit,
   writeBatch
-} = Firestore;
-
-const { 
+} from 'firebase/firestore';
+import { 
   ref, 
   uploadString, 
   getDownloadURL 
-} = Storage;
+} from 'firebase/storage';
+import { db, storage } from './firebase';
+import { Product, Order, User, Coupon, Review } from '../types';
 
 const USERS_COLLECTION = 'users';
 const PRODUCTS_COLLECTION = 'products';
