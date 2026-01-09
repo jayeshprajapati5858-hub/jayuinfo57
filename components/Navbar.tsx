@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock, Languages } from 'lucide-react';
-import { Language, User } from '../types';
+import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock } from 'lucide-react';
+import { User } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 interface NavbarProps {
@@ -17,8 +18,6 @@ interface NavbarProps {
   onLogout: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  language: Language;
-  onToggleLanguage: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -35,10 +34,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   darkMode,
   onToggleDarkMode,
-  language,
-  onToggleLanguage
 }) => {
-  const t = TRANSLATIONS[language];
+  const t = TRANSLATIONS['en'];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -77,12 +74,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
-             {/* Language Toggle */}
-             <button onClick={onToggleLanguage} className="p-3 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all font-bold text-sm flex items-center gap-1">
-                <Languages size={20} />
-                {language === 'en' ? 'EN' : 'GU'}
-             </button>
-
              {/* Admin Button */}
              <button onClick={onAdminClick} className="p-3 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all" title="Admin Access">
                 <Lock size={20} />
@@ -129,9 +120,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Search Icon & Menu */}
           <div className="flex md:hidden items-center gap-4">
-            <button onClick={onToggleLanguage} className="text-gray-900 dark:text-white font-bold text-xs">
-              {language === 'en' ? 'EN' : 'GU'}
-            </button>
             <button onClick={onToggleDarkMode} className="text-gray-400">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
@@ -191,10 +179,6 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span className="text-xs font-bold dark:text-white">Wishlist</span>
                  </button>
               </div>
-
-              <button onClick={() => { onToggleLanguage(); setIsMenuOpen(false); }} className="w-full py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
-                 <Languages size={18} /> Switch Language ({language === 'en' ? 'English' : 'Gujarati'})
-              </button>
 
               <div className="pt-2">
                  <button onClick={() => { onAdminClick(); setIsMenuOpen(false); }} className="text-xs text-gray-400 font-medium text-center w-full flex items-center justify-center gap-2">

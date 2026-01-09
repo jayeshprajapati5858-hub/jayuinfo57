@@ -19,7 +19,7 @@ import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review, Language, User } from './types';
+import { Product, CartItem, Category, Order, Coupon, Review, User } from './types';
 import { Home, ShoppingBag, Package, AlertTriangle, Zap, Shield, Smartphone } from 'lucide-react';
 import { api } from './services/api';
 
@@ -34,9 +34,6 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('mh_current_user');
     return saved ? JSON.parse(saved) : null;
   });
-
-  // Default to Gujarati as requested
-  const [language, setLanguage] = useState<Language>('gu'); 
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -64,7 +61,7 @@ const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
 
-  const t = TRANSLATIONS[language];
+  const t = TRANSLATIONS['en'];
 
   // Dark Mode Persistence
   useEffect(() => {
@@ -101,10 +98,6 @@ const App: React.FC = () => {
     window.addEventListener('hashchange', checkSecretPath);
     return () => window.removeEventListener('hashchange', checkSecretPath);
   }, []);
-
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'en' ? 'gu' : 'en');
-  };
 
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
@@ -150,16 +143,23 @@ const App: React.FC = () => {
 
   const addToCart = (product: Product, silent = false) => {
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...prev, { ...product, quantity: 1 }];
+      // Logic modified to treat products with different colors as different cart items
+      // If product comes from card (no selectedColor), default to first color if available
+      const colorToAdd = (product as any).selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0] : undefined);
+      
+      const existing = prev.find(item => item.id === product.id && item.selectedColor === colorToAdd);
+      
+      if (existing) {
+          return prev.map(item => (item.id === product.id && item.selectedColor === colorToAdd) ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, quantity: 1, selectedColor: colorToAdd }];
     });
     if (!silent) showToast(`${product.name} Added`);
   };
 
   const buyNow = (product: Product) => {
-    addToCart(product, true);
-    setIsCheckoutOpen(true);
+    // Open product modal to select color first instead of direct add
+    setSelectedProduct(product);
   };
 
   const handleLogout = () => {
@@ -303,14 +303,12 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
-        language={language}
-        onToggleLanguage={toggleLanguage}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <HeroSection 
           onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
-          language={language}
+          language={'en'}
         />
         
         {/* Category Shortcuts - New Feature */}
@@ -348,7 +346,7 @@ const App: React.FC = () => {
               onBuyNow={(p) => buyNow(p)}
               onViewDetails={setSelectedProduct} 
               onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
-              language={language}
+              language={'en'}
             />
           )) : (
             <div className="col-span-full py-12 text-center text-gray-400 flex flex-col items-center">
@@ -390,11 +388,11 @@ const App: React.FC = () => {
         onSignup={handleSignup}
         onResetPassword={handleResetPassword}
       />
-      <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
+      <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={'en'} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
-      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={()=>{}} language={language} />
+      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={()=>{}} language={'en'} />
       
       <CheckoutModal 
         isOpen={isCheckoutOpen} 

@@ -7,7 +7,7 @@ export enum Category {
   CABLE = 'Cables'
 }
 
-export type Language = 'en' | 'gu';
+export type Language = 'en'; // Restricted to English only
 
 export interface User {
   id: string;
@@ -32,7 +32,9 @@ export interface Product {
   description: string;
   price: number;
   category: Category;
-  image: string;
+  image: string; // Main thumbnail
+  images: string[]; // Gallery images
+  colors: string[]; // Available colors
   rating: number;
   stock: number;
   sales: number;
@@ -41,6 +43,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedColor?: string; // Color chosen by user
 }
 
 export interface ChatMessage {

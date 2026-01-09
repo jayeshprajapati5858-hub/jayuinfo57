@@ -118,38 +118,51 @@ export const api = {
     await ensureAuth();
     
     try {
-      let imageUrl = product.image || "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
+      // Logic for handling multiple images
+      let uploadedImages: string[] = [];
+      
+      // If product has images array with Base64 strings, upload them
+      if (product.images && product.images.length > 0) {
+        // Check if the first image is a data URL (new upload) or already a URL (existing/seeded)
+        if (product.images[0].startsWith('data:image')) {
+            console.log("Uploading multiple images...");
+            
+            const uploadPromises = product.images.map(async (imgBase64, index) => {
+                try {
+                    const timestamp = Date.now();
+                    const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
+                    const storageRef = ref(storage, `products/${timestamp}_${safeName}_${index}.jpg`);
+                    
+                    await Promise.race([
+                        uploadString(storageRef, imgBase64, 'data_url'),
+                        timeout(10000) // 10 second timeout for multiple
+                    ]);
+                    return await getDownloadURL(storageRef);
+                } catch (e) {
+                    console.error("Failed to upload image index " + index, e);
+                    // Fallback to base64 if upload fails, though ideally we want URL
+                    return imgBase64.length < 500000 ? imgBase64 : "https://via.placeholder.com/400?text=UploadFailed"; 
+                }
+            });
 
-      // Handle Image Upload
-      if (product.image && product.image.startsWith('data:image')) {
-        try {
-          // Attempt Storage Upload with 5s timeout race
-          // If storage takes too long or fails, we fall back to base64
-          const timestamp = Date.now();
-          const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-          const storageRef = ref(storage, `products/${timestamp}_${safeName}.jpg`);
-          
-          await Promise.race([
-            uploadString(storageRef, product.image, 'data_url'),
-            timeout(5000) // 5 second timeout
-          ]);
-          
-          imageUrl = await getDownloadURL(storageRef);
-        } catch (storageError: any) {
-          console.error("Storage upload failed or timed out:", storageError);
-          // Fallback: Use Base64 if small, else placeholder
-          if (product.image.length < 500000) { // Limit to ~500KB for Firestore safety
-             imageUrl = product.image;
-             console.log("Falling back to Base64 storage");
-          } else {
-             console.warn("Image too large for Firestore fallback. Using placeholder.");
-             imageUrl = "https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80";
-             alert("Warning: Image upload failed (Network/Storage issue) and image was too large for database. A placeholder image was used.");
-          }
+            uploadedImages = await Promise.all(uploadPromises);
+        } else {
+            // Already URLs
+            uploadedImages = product.images;
         }
+      } else {
+          // Fallback placeholder
+           uploadedImages = ["https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80"];
       }
 
-      const productToSave = { ...product, image: imageUrl };
+      // Ensure main image is set
+      const mainImage = uploadedImages[0];
+
+      const productToSave = { 
+          ...product, 
+          image: mainImage,
+          images: uploadedImages 
+      };
       
       // Save to Firestore
       const docRef = doc(db, PRODUCTS_COLLECTION, product.id);

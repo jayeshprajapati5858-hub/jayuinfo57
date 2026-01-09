@@ -64,13 +64,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
     }, 2000);
   };
 
-  const handleWhatsAppOrder = () => {
-    const phoneNumber = "919876543210"; 
-    const cartSummary = cartItems.map(item => `- ${item.name} (Qty: ${item.quantity})`).join('\n');
-    const message = `Hello ${SHOP_NAME}! I want to place an order.\n\n*Items:*\n${cartSummary}\n\n*Total:* ₹${finalTotal.toLocaleString()}\n\nMy Details:\nName: ${formData.name || 'Not provided'}\nPhone: ${formData.phone || 'Not provided'}\nAddress: ${formData.address || 'Not provided'}, ${formData.city || 'Not provided'}`;
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
   const handleClose = () => {
     setStep('summary');
     setShowInvoice(false);
@@ -181,12 +174,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                    </h2>
                    <div className="space-y-6">
                       {cartItems.map((item) => (
-                         <div key={item.id} className="flex gap-4">
+                         <div key={`${item.id}-${item.selectedColor}`} className="flex gap-4">
                             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200 dark:border-gray-700">
                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex-1">
                                <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{item.name}</h3>
+                               {item.selectedColor && <p className="text-[10px] font-bold text-gray-500 uppercase">Color: {item.selectedColor}</p>}
                                <p className="text-xs text-gray-500 mb-2">{item.category}</p>
                                <div className="flex justify-between items-center">
                                   <span className="text-sm font-semibold dark:text-gray-300">Qty: {item.quantity}</span>
@@ -260,19 +254,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
            {/* STEP 2: ADDRESS FORM */}
            {step === 'address' && (
              <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-                <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-2xl p-4 mb-6 flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="bg-green-500 p-2 rounded-xl text-white"><MessageCircle size={20} /></div>
-                      <div>
-                         <p className="text-xs font-black uppercase text-green-700 dark:text-green-400 tracking-widest">Skip the form?</p>
-                         <p className="text-[10px] text-green-600 dark:text-green-500 font-bold">Order instantly via WhatsApp</p>
-                      </div>
-                   </div>
-                   <button onClick={handleWhatsAppOrder} className="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide">
-                      Chat Now
-                   </button>
-                </div>
-
                 <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
                    <h2 className="text-xl font-black uppercase italic tracking-tighter mb-6 dark:text-white flex items-center gap-2">
                       <MapPin className="text-primary" /> Delivery Details

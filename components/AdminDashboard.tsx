@@ -44,12 +44,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     price: '',
     category: Category.COVER,
     description: '',
-    image: '',
+    colors: '', // Comma separated string
     stock: 50,
-    sales: 0
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [reviewModalOpen, setReviewModalOpen] = useState<string | null>(null);
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '', image: '' });
   const [reviewImageFile, setReviewImageFile] = useState<File | null>(null);
@@ -72,13 +71,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     e.preventDefault();
     setIsUploading(true);
     try {
-        let imageUrl = newProduct.image;
-        if (imageFile) {
-          try { imageUrl = await handleFileToUrl(imageFile); } 
-          catch { imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`; }
-        } else if (!imageUrl) {
-            imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`;
+        let imageUrls: string[] = [];
+        
+        if (imageFiles.length > 0) {
+           const promises = imageFiles.map(file => handleFileToUrl(file));
+           imageUrls = await Promise.all(promises);
+        } else {
+            imageUrls = [`https://picsum.photos/400/400?random=${Date.now()}`];
         }
+
+        const colorList = newProduct.colors.split(',').map(c => c.trim()).filter(c => c !== '');
 
         const product: Product = {
           id: Date.now().toString(),
@@ -86,7 +88,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           price: Number(newProduct.price),
           category: newProduct.category,
           description: newProduct.description,
-          image: imageUrl,
+          image: imageUrls[0], // Main image is the first one
+          images: imageUrls,
+          colors: colorList.length > 0 ? colorList : ['Default'],
           rating: 0,
           stock: Number(newProduct.stock),
           sales: 0,
@@ -96,8 +100,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         // Await the add operation
         await onAddProduct(product);
         
-        setNewProduct({ name: '', price: '', category: Category.COVER, description: '', image: '', stock: 50, sales: 0 });
-        setImageFile(null);
+        setNewProduct({ name: '', price: '', category: Category.COVER, description: '', colors: '', stock: 50 });
+        setImageFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
         console.error("Dashboard error:", error);
@@ -136,7 +140,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setImageFile(e.target.files[0]);
+    if (e.target.files) {
+        setImageFiles(Array.from(e.target.files));
+    }
   };
 
   const handleReviewImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,9 +179,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <p><strong>To:</strong> ${order.customerName}<br/>${order.address}</p>
           <table>
-            <thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+            <thead><tr><th>Item</th><th>Color</th><th>Qty</th><th>Total</th></tr></thead>
             <tbody>
-              ${order.items.map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.quantity * item.price}</td></tr>`).join('')}
+              ${order.items.map(item => `<tr><td>${item.name}</td><td>${item.selectedColor || '-'}</td><td>${item.quantity}</td><td>₹${item.quantity * item.price}</td></tr>`).join('')}
             </tbody>
           </table>
           <h3>Total: ₹${(order.finalTotal || order.total).toLocaleString()}</h3>
@@ -257,7 +263,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="font-medium dark:text-white">{order.customerName}</div>
                             <div className="text-xs text-gray-400">{order.address}</div>
                         </td>
-                        <td className="p-4 text-sm dark:text-gray-300">{order.items.length} Items</td>
+                        <td className="p-4 text-sm dark:text-gray-300">
+                            {order.items.map(i => (
+                                <div key={i.id} className="text-xs">
+                                    {i.name} {i.selectedColor ? `(${i.selectedColor})` : ''} x{i.quantity}
+                                </div>
+                            ))}
+                        </td>
                         <td className="p-4 font-bold dark:text-white">₹{(order.finalTotal||order.total).toLocaleString()}</td>
                         <td className="p-4"><span className={`px-2 py-1 rounded text-xs ${order.status === 'Shipped' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>{order.status}</span></td>
                         <td className="p-4 flex gap-2">
@@ -284,7 +296,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${order.status === 'Shipped' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>{order.status}</span>
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</p>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                             {order.items.map(i => (
+                                <div key={i.id}>• {i.name} {i.selectedColor ? `(${i.selectedColor})` : ''} x{i.quantity}</div>
+                            ))}
+                        </div>
                         <div className="flex justify-between items-center pt-2">
                              <span className="font-bold text-lg dark:text-white">₹{(order.finalTotal||order.total).toLocaleString()}</span>
                              <div className="flex gap-2">
@@ -319,13 +335,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <input required type="number" placeholder="Price (₹)" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
                     <input required type="number" placeholder="Stock Qty" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: Number(e.target.value)})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
                 </div>
+                
+                <input type="text" placeholder="Colors (e.g. Red, Black, Blue)" value={newProduct.colors} onChange={e => setNewProduct({...newProduct, colors: e.target.value})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
+                
                 <textarea required rows={2} placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="px-4 py-2 border dark:border-gray-700 rounded-lg w-full dark:bg-gray-800 dark:text-white" />
+                
                 <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50 text-center">
-                    <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" id="prod-img" ref={fileInputRef} />
+                    <input type="file" accept="image/*" multiple onChange={handleProductImageSelect} className="hidden" id="prod-img" ref={fileInputRef} />
                     <label htmlFor="prod-img" className="cursor-pointer flex flex-col items-center gap-2">
-                        {imageFile ? <div className="text-green-600 dark:text-green-400 font-medium truncate w-full">{imageFile.name}</div> : <><ImageIcon className="text-gray-400" /> <span className="text-sm text-gray-500">Click to upload image</span></>}
+                        {imageFiles.length > 0 ? (
+                            <div className="text-green-600 dark:text-green-400 font-medium">{imageFiles.length} Images Selected</div>
+                        ) : (
+                            <><ImageIcon className="text-gray-400" /> <span className="text-sm text-gray-500">Click to upload multiple images</span></>
+                        )}
                     </label>
                 </div>
+                
                 <button type="submit" disabled={isUploading} className="w-full bg-gray-900 dark:bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                   {isUploading ? <Loader2 className="animate-spin" /> : <Plus size={20} />} {isUploading ? "Uploading..." : "Add Product"}
                 </button>
@@ -345,6 +370,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          <div>
                             <span className="text-xs font-bold text-primary uppercase tracking-wider">{product.category}</span>
                             <h4 className="font-bold text-gray-900 dark:text-white text-lg leading-tight mt-0.5">{product.name}</h4>
+                            <div className="flex gap-1 mt-1">
+                                {product.colors?.map(c => <span key={c} className="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">{c}</span>)}
+                            </div>
                          </div>
                          <p className="text-lg font-bold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">₹{product.price}</p>
                       </div>
@@ -371,111 +399,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
           </div>
-        )}
-
-        {activeTab === 'coupons' && (
-           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
-              <h2 className="text-xl font-bold dark:text-white mb-4">Add Coupon</h2>
-              <form onSubmit={handleCouponSubmit} className="flex gap-4 mb-6">
-                  <input type="text" placeholder="CODE" value={newCoupon.code} onChange={e => setNewCoupon({...newCoupon, code: e.target.value})} className="border dark:border-gray-700 rounded-lg px-4 py-2 uppercase w-32 dark:bg-gray-800 dark:text-white" />
-                  <input type="number" placeholder="%" value={newCoupon.discountPercent} onChange={e => setNewCoupon({...newCoupon, discountPercent: Number(e.target.value)})} className="border dark:border-gray-700 rounded-lg px-4 py-2 w-20 dark:bg-gray-800 dark:text-white" />
-                  <button type="submit" className="bg-gray-900 dark:bg-primary text-white px-4 rounded-lg">Add</button>
-              </form>
-              <div className="space-y-2">
-                  {coupons.map(c => (
-                      <div key={c.code} className="flex justify-between border dark:border-gray-700 p-3 rounded-lg dark:bg-gray-800">
-                          <span className="font-mono font-bold dark:text-white">{c.code}</span>
-                          <span className="text-green-600 dark:text-green-400">{c.discountPercent}% OFF</span>
-                          <button onClick={() => onDeleteCoupon(c.code)} className="text-red-500 hover:text-red-600"><Trash2 size={16}/></button>
-                      </div>
-                  ))}
-              </div>
-           </div>
-        )}
-
-        {/* USERS TAB */}
-        {activeTab === 'users' && (
-           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-             <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center">
-                <h2 className="text-xl font-bold dark:text-white">Registered Users ({users.length})</h2>
-                <Users className="text-primary" />
-             </div>
-             <div className="overflow-x-auto">
-               <table className="w-full text-left">
-                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-sm">
-                   <tr>
-                     <th className="p-4">Name</th>
-                     <th className="p-4">Email / Login ID</th>
-                     <th className="p-4">Password</th>
-                     <th className="p-4">Join Date</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                   {users.map(user => (
-                       <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                         <td className="p-4">
-                            <div className="flex items-center gap-3">
-                               <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-xs uppercase">
-                                  {user.name[0]}
-                                </div>
-                               <div className="font-medium dark:text-white">{user.name}</div>
-                            </div>
-                         </td>
-                         <td className="p-4">
-                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                               <Mail size={14} /> {user.email}
-                            </div>
-                         </td>
-                         <td className="p-4">
-                            <div className="flex items-center gap-2 font-mono text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">
-                               <Lock size={12} className="text-gray-400" /> {user.password}
-                            </div>
-                         </td>
-                         <td className="p-4">
-                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                               <Calendar size={14} /> {new Date(user.joinDate).toLocaleDateString()}
-                            </div>
-                         </td>
-                       </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-             {users.length === 0 && <div className="p-12 text-center text-gray-400">No registered users yet.</div>}
-           </div>
-        )}
-
-        {reviewModalOpen && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReviewModalOpen(null)} />
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md relative z-10 animate-in zoom-in-95">
-                    <h3 className="text-lg font-bold mb-4 dark:text-white">Add Admin Review</h3>
-                    <form onSubmit={handleReviewSubmit} className="space-y-4">
-                        <input required placeholder="Customer Name" value={newReview.userName} onChange={e => setNewReview({...newReview, userName: e.target.value})} className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-4 py-2" />
-                        <div>
-                            <label className="text-xs text-gray-500">Rating</label>
-                            <div className="flex gap-2">
-                                {[1,2,3,4,5].map(r => (
-                                    <button key={r} type="button" onClick={() => setNewReview({...newReview, rating: r})} className={`p-1 rounded ${newReview.rating >= r ? 'text-yellow-400' : 'text-gray-300'}`}>
-                                        <Star fill="currentColor" size={24} />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <textarea required placeholder="Comment" value={newReview.comment} onChange={e => setNewReview({...newReview, comment: e.target.value})} className="w-full border dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-4 py-2" rows={3} />
-                        <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800 text-center">
-                            <input type="file" accept="image/*" onChange={handleReviewImageSelect} className="hidden" id="rev-img" />
-                            <label htmlFor="rev-img" className="cursor-pointer flex flex-col items-center gap-1">
-                                {reviewImageFile ? <div className="text-green-600 dark:text-green-400 text-sm truncate">{reviewImageFile.name}</div> : <><ImageIcon className="text-gray-400" size={20} /> <span className="text-xs text-gray-500 dark:text-gray-400">Add Customer Photo (Optional)</span></>}
-                            </label>
-                        </div>
-                        <button type="submit" disabled={isUploading} className="w-full bg-blue-600 dark:bg-primary text-white py-3 rounded-xl font-bold transition-all">
-                            {isUploading ? 'Saving...' : 'Submit Review'}
-                        </button>
-                    </form>
-                    <button onClick={() => setReviewModalOpen(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20}/></button>
-                </div>
-            </div>
         )}
       </div>
     </div>

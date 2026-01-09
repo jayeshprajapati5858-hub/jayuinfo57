@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, Review } from '../types';
-import { X, Star, ShoppingCart, RotateCcw, Zap } from 'lucide-react';
+import { X, Star, ShoppingCart, RotateCcw, Zap, Check } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
 interface ProductModalProps {
@@ -14,11 +14,26 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onAddReview, language = 'en' }) => {
-  const t = TRANSLATIONS[language] || TRANSLATIONS['en'];
+  const t = TRANSLATIONS['en'];
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [activeImage, setActiveImage] = useState<string>('');
+
+  useEffect(() => {
+    if (product) {
+        // Default to first available color and main image
+        setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0] : 'Default');
+        setActiveImage(product.image);
+    }
+  }, [product, isOpen]);
 
   if (!isOpen || !product) return null;
 
   const isOutOfStock = product.stock === 0;
+
+  const handleAddToCart = () => {
+      onAddToCart({ ...product, selectedColor: selectedColor }); // Pass the color info, handle in App/Cart logic if needed by extending type
+      onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -31,8 +46,24 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
           {/* Image Section */}
-          <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 p-8 flex items-center justify-center overflow-hidden">
-            <img src={product.image} alt={product.name} className={`w-full max-w-sm object-contain mix-blend-multiply dark:mix-blend-normal hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-75' : ''}`} />
+          <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 p-8 flex flex-col items-center justify-center overflow-hidden">
+            <div className="flex-1 flex items-center justify-center w-full">
+                <img src={activeImage} alt={product.name} className={`w-full max-w-sm object-contain mix-blend-multiply dark:mix-blend-normal hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-75' : ''}`} />
+            </div>
+            {/* Gallery */}
+            {product.images && product.images.length > 1 && (
+                <div className="flex gap-2 mt-4 overflow-x-auto w-full px-2 justify-center">
+                    {product.images.map((img, idx) => (
+                        <button 
+                            key={idx} 
+                            onClick={() => setActiveImage(img)}
+                            className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 ${activeImage === img ? 'border-primary' : 'border-transparent'}`}
+                        >
+                            <img src={img} className="w-full h-full object-cover" />
+                        </button>
+                    ))}
+                </div>
+            )}
           </div>
 
           {/* Details Section */}
@@ -48,6 +79,24 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{product.name}</h2>
               <div className="text-3xl font-bold text-gray-900 dark:text-white mb-6">₹{product.price.toLocaleString()}</div>
+
+              {/* Color Selection */}
+              {product.colors && product.colors.length > 0 && (
+                  <div className="mb-6">
+                      <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Select Color: <span className="text-gray-900 dark:text-white">{selectedColor}</span></p>
+                      <div className="flex flex-wrap gap-3">
+                          {product.colors.map(color => (
+                              <button
+                                key={color}
+                                onClick={() => setSelectedColor(color)}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${selectedColor === color ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-transparent' : 'bg-transparent border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'}`}
+                              >
+                                {color}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              )}
 
               {/* Badges Section */}
               <div className="grid grid-cols-2 gap-3 mb-8">
@@ -74,10 +123,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
               <button 
                 disabled={isOutOfStock}
-                onClick={() => {
-                  onAddToCart(product);
-                  onClose();
-                }}
+                onClick={handleAddToCart}
                 className={`w-full py-5 rounded-2xl font-black text-xl transition-all flex items-center justify-center gap-2 shadow-xl ${isOutOfStock ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-900 dark:bg-primary text-white hover:bg-primary hover:-translate-y-1 shadow-gray-200 dark:shadow-none italic uppercase tracking-widest'}`}
               >
                 <ShoppingCart size={24} />

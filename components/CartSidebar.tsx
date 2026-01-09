@@ -55,12 +55,13 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="flex gap-4 group">
+                  <div key={`${item.id}-${item.selectedColor}`} className="flex gap-4 group">
                     <div className="w-20 h-20 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{item.name}</h3>
+                      {item.selectedColor && <p className="text-[10px] font-bold text-gray-500 uppercase">Color: {item.selectedColor}</p>}
                       <p className="text-xs text-gray-500 mb-2">₹{item.price.toLocaleString()}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg">

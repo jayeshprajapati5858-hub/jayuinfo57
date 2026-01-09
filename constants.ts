@@ -19,6 +19,8 @@ export const PRODUCTS: Product[] = [
     price: 1999,
     category: Category.CHARGER,
     image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
+    images: ['https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80'],
+    colors: ['White', 'Black'],
     rating: 4.8,
     stock: 20,
     sales: 150,
@@ -31,6 +33,8 @@ export const PRODUCTS: Product[] = [
     price: 499,
     category: Category.GLASS,
     image: 'https://images.unsplash.com/photo-1592899677977-9c10ca63a16d?auto=format&fit=crop&w=800&q=80',
+    images: ['https://images.unsplash.com/photo-1592899677977-9c10ca63a16d?auto=format&fit=crop&w=800&q=80'],
+    colors: ['Transparent'],
     rating: 4.5,
     stock: 50,
     sales: 300,
@@ -43,6 +47,8 @@ export const PRODUCTS: Product[] = [
     price: 799,
     category: Category.COVER,
     image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=800&q=80',
+    images: ['https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&fit=crop&w=800&q=80'],
+    colors: ['Black', 'Navy Blue', 'Dark Green'],
     rating: 4.7,
     stock: 35,
     sales: 120,
@@ -55,6 +61,8 @@ export const PRODUCTS: Product[] = [
     price: 299,
     category: Category.CABLE,
     image: 'https://images.unsplash.com/photo-1555543451-ee268f8e8157?auto=format&fit=crop&w=800&q=80',
+    images: ['https://images.unsplash.com/photo-1555543451-ee268f8e8157?auto=format&fit=crop&w=800&q=80'],
+    colors: ['Red', 'Black'],
     rating: 4.6,
     stock: 100,
     sales: 500,
@@ -87,32 +95,6 @@ export const TRANSLATIONS: Record<string, any> = {
       [Category.GLASS]: "Toughened Glass",
       [Category.AUDIO]: "Audio Gear",
       [Category.CABLE]: "Data Cables"
-    }
-  },
-  gu: {
-    shop_name: "MobileHub",
-    search_placeholder: "ચાર્જર, કવર શોધો...",
-    hero_title_1: "શ્રેષ્ઠ મોબાઈલ",
-    hero_title_2: "એસેસરીઝ",
-    hero_desc: "તમારા મોબાઈલ માટે બેસ્ટ ચાર્જર, ગ્લાસ અને કવર. આજે જ ઓર્ડર કરો.",
-    hero_badge: "ઝડપી ડિલિવરી",
-    shop_now: "ખરીદી કરો",
-    premium_collection: "નવું કલેક્શન",
-    add_to_cart: "કાર્ટમાં ઉમેરો",
-    return_policy: "7 દિવસમાં બદલી અપાશે",
-    next_day_dispatch: "બીજા દિવસે રવાના",
-    style_matcher: "AI સ્ટાઈલ મેચર",
-    upload_outfit: "તમારા કપડાંનો ફોટો અપલોડ કરો",
-    analyzing: "ચકાસણી ચાલુ છે...",
-    verify_product: "પ્રોડક્ટ વેરીફાઈ કરો",
-    certificate_title: "અસલ પ્રોડક્ટ સર્ટીફીકેટ",
-    verified_desc: "આ પ્રોડક્ટ 100% ઓરીજીનલ છે.",
-    categories: {
-      [Category.CHARGER]: "ફાસ્ટ ચાર્જર",
-      [Category.COVER]: "મોબાઈલ કવર",
-      [Category.GLASS]: "ટફન ગ્લાસ",
-      [Category.AUDIO]: "હેડફોન/સ્પીકર",
-      [Category.CABLE]: "કેબલ્સ"
     }
   }
 };
