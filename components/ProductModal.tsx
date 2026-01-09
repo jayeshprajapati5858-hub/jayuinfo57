@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Review } from '../types';
-import { X, Star, ShoppingCart, RotateCcw, Zap, Check } from 'lucide-react';
+import { X, Star, ShoppingCart, RotateCcw, Zap, ArrowRight } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
 interface ProductModalProps {
@@ -9,11 +9,12 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (product: Product) => void;
+  onBuyNow: (product: Product) => void; // Added Buy Now handler
   onAddReview: (productId: string, review: Review) => void;
   language?: any;
 }
 
-const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onAddReview, language = 'en' }) => {
+const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onBuyNow, onAddReview, language = 'en' }) => {
   const t = TRANSLATIONS['en'];
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [activeImage, setActiveImage] = useState<string>('');
@@ -31,7 +32,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
   const isOutOfStock = product.stock === 0;
 
   const handleAddToCart = () => {
-      onAddToCart({ ...product, selectedColor: selectedColor }); // Pass the color info, handle in App/Cart logic if needed by extending type
+      onAddToCart({ ...product, selectedColor: selectedColor }); 
+      onClose();
+  };
+
+  const handleBuyNow = () => {
+      onBuyNow({ ...product, selectedColor: selectedColor });
       onClose();
   };
 
@@ -82,14 +88,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
               {/* Color Selection */}
               {product.colors && product.colors.length > 0 && (
-                  <div className="mb-6">
-                      <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Select Color: <span className="text-gray-900 dark:text-white">{selectedColor}</span></p>
+                  <div className="mb-6 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Select Color: <span className="text-primary dark:text-white ml-1">{selectedColor}</span></p>
                       <div className="flex flex-wrap gap-3">
                           {product.colors.map(color => (
                               <button
                                 key={color}
                                 onClick={() => setSelectedColor(color)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${selectedColor === color ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-transparent' : 'bg-transparent border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-400'}`}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition-all ${selectedColor === color ? 'bg-white dark:bg-gray-700 border-primary text-primary dark:text-white shadow-md transform scale-105' : 'bg-transparent border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400'}`}
                               >
                                 {color}
                               </button>
@@ -121,14 +127,25 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
                 </div>
               </div>
 
-              <button 
-                disabled={isOutOfStock}
-                onClick={handleAddToCart}
-                className={`w-full py-5 rounded-2xl font-black text-xl transition-all flex items-center justify-center gap-2 shadow-xl ${isOutOfStock ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-900 dark:bg-primary text-white hover:bg-primary hover:-translate-y-1 shadow-gray-200 dark:shadow-none italic uppercase tracking-widest'}`}
-              >
-                <ShoppingCart size={24} />
-                {isOutOfStock ? 'Out of Stock' : t.add_to_cart}
-              </button>
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-auto">
+                <button 
+                  disabled={isOutOfStock}
+                  onClick={handleAddToCart}
+                  className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 border-2 ${isOutOfStock ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-800 border-gray-900 dark:border-white text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
+                  <ShoppingCart size={20} />
+                  {isOutOfStock ? 'No Stock' : 'Add to Cart'}
+                </button>
+                
+                <button 
+                  disabled={isOutOfStock}
+                  onClick={handleBuyNow}
+                  className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 shadow-xl ${isOutOfStock ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-900 dark:bg-primary text-white hover:scale-[1.02] active:scale-95 shadow-gray-200 dark:shadow-none italic uppercase tracking-widest'}`}
+                >
+                  Buy Now <ArrowRight size={20} />
+                </button>
+              </div>
               
               <p className="mt-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 Trusted by 50,000+ Customers across India

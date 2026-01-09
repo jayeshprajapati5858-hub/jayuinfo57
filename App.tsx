@@ -142,10 +142,19 @@ const App: React.FC = () => {
   }, []);
 
   const addToCart = (product: Product, silent = false) => {
+    // IMPORTANT: If product has multiple colors but no color is selected yet, OPEN MODAL
+    const hasColorOptions = product.colors && product.colors.length > 0;
+    const isColorSelected = (product as any).selectedColor; // Cast to access custom prop if exists
+
+    if (hasColorOptions && !isColorSelected) {
+      setSelectedProduct(product); // Open modal to select color
+      return;
+    }
+
     setCart(prev => {
       // Logic modified to treat products with different colors as different cart items
-      // If product comes from card (no selectedColor), default to first color if available
-      const colorToAdd = (product as any).selectedColor || (product.colors && product.colors.length > 0 ? product.colors[0] : undefined);
+      // Use the selected color, or default to first one if forced (though modal prevents this now)
+      const colorToAdd = isColorSelected || (hasColorOptions ? product.colors[0] : undefined);
       
       const existing = prev.find(item => item.id === product.id && item.selectedColor === colorToAdd);
       
@@ -160,6 +169,22 @@ const App: React.FC = () => {
   const buyNow = (product: Product) => {
     // Open product modal to select color first instead of direct add
     setSelectedProduct(product);
+  };
+
+  const handleModalBuyNow = (product: Product) => {
+      // Add specific product (with color) to cart
+      // We pass 'true' to silent so we don't get double toast
+      setCart(prev => {
+        const colorToAdd = (product as any).selectedColor;
+        const existing = prev.find(item => item.id === product.id && item.selectedColor === colorToAdd);
+        if (existing) {
+            return prev.map(item => (item.id === product.id && item.selectedColor === colorToAdd) ? { ...item, quantity: item.quantity + 1 } : item);
+        }
+        return [...prev, { ...product, quantity: 1, selectedColor: colorToAdd }];
+      });
+      
+      // Immediately open checkout
+      setIsCheckoutOpen(true);
   };
 
   const handleLogout = () => {
@@ -392,7 +417,16 @@ const App: React.FC = () => {
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
-      <ProductModal isOpen={!!selectedProduct} product={selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={addToCart} onAddReview={()=>{}} language={'en'} />
+      
+      <ProductModal 
+        isOpen={!!selectedProduct} 
+        product={selectedProduct} 
+        onClose={() => setSelectedProduct(null)} 
+        onAddToCart={addToCart} 
+        onBuyNow={handleModalBuyNow}
+        onAddReview={()=>{}} 
+        language={'en'} 
+      />
       
       <CheckoutModal 
         isOpen={isCheckoutOpen} 
