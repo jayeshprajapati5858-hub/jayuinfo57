@@ -62,6 +62,9 @@ const App: React.FC = () => {
   const [sortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
+  
+  // New state to handle flow redirection after login
+  const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
 
   const t = TRANSLATIONS['en'];
 
@@ -185,8 +188,13 @@ const App: React.FC = () => {
         return [...prev, { ...product, quantity: 1, selectedColor: colorToAdd }];
       });
       
-      // Immediately open checkout
-      setIsCheckoutOpen(true);
+      // Immediately open checkout check
+      if (currentUser) {
+        setIsCheckoutOpen(true);
+      } else {
+        setIsAuthOpen(true);
+        setPendingAction('checkout');
+      }
   };
 
   const handleLogout = async () => {
@@ -220,6 +228,12 @@ const App: React.FC = () => {
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     showToast(`Welcome back, ${user.name}!`);
+    
+    // Resume pending action if any
+    if (pendingAction === 'checkout') {
+      setIsCheckoutOpen(true);
+      setPendingAction(null);
+    }
   };
 
   // --- Admin Handlers (Persist to Firebase) ---
@@ -404,14 +418,33 @@ const App: React.FC = () => {
 
       <UserAuthModal 
         isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+        onClose={() => { setIsAuthOpen(false); setPendingAction(null); }} 
         onLogin={handleLogin}
         onSignup={handleSignup}
         users={users} // Pass users to check if phone exists
         onResetPassword={async () => true} // No longer used for phone, but required by type
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={'en'} />
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
+      <CartSidebar 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+        items={cart} 
+        savedItems={[]} 
+        onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} 
+        onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} 
+        onCheckout={() => { 
+          setIsCartOpen(false); 
+          if (currentUser) {
+            setIsCheckoutOpen(true); 
+          } else {
+            setIsAuthOpen(true);
+            setPendingAction('checkout');
+          }
+        }} 
+        onSaveForLater={()=>{}} 
+        onMoveToCart={()=>{}} 
+        onRemoveSaved={()=>{}} 
+      />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
       
@@ -431,6 +464,7 @@ const App: React.FC = () => {
         cartItems={cart} 
         coupons={coupons} 
         onPlaceOrder={handlePlaceOrder} 
+        currentUser={currentUser}
       />
       
       <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />

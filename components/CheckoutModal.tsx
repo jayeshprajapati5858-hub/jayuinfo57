@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { CartItem, Coupon, Order } from '../types';
+import React, { useState, useEffect } from 'react';
+import { CartItem, Coupon, Order, User } from '../types';
 import { X, CheckCircle, ArrowLeft, Gift, Smartphone, MessageCircle, MapPin, ShoppingBag, ChevronRight, CreditCard, ShieldCheck, Loader2 } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 import Invoice from './Invoice';
@@ -11,11 +11,12 @@ interface CheckoutModalProps {
   cartItems: CartItem[];
   onPlaceOrder: (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number) => Order;
   coupons: Coupon[];
+  currentUser: User | null;
 }
 
 type CheckoutStep = 'summary' | 'address' | 'processing' | 'success';
 
-const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItems, onPlaceOrder, coupons }) => {
+const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItems, onPlaceOrder, coupons, currentUser }) => {
   const [step, setStep] = useState<CheckoutStep>('summary');
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -25,6 +26,18 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState('');
+
+  // Auto-fill user data when modal opens or user logs in
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        phone: currentUser.phoneNumber || prev.phone,
+        email: currentUser.email || prev.email
+      }));
+    }
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
@@ -67,7 +80,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
   const handleClose = () => {
     setStep('summary');
     setShowInvoice(false);
-    setFormData({ name: '', phone: '', email: '', address: '', city: '', zip: '' });
+    // Don't clear form data completely so logged in user details persist for next time
+    if (!currentUser) {
+        setFormData({ name: '', phone: '', email: '', address: '', city: '', zip: '' });
+    }
     setAppliedCoupon(null);
     setCouponCode('');
     onClose();
