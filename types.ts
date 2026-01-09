@@ -12,8 +12,9 @@ export type Language = 'en'; // Restricted to English only
 export interface User {
   id: string;
   name: string;
-  email: string;
-  password: string;
+  email?: string; // Made optional
+  phoneNumber?: string; // Added for OTP login
+  password?: string; // Made optional
   joinDate: string;
 }
 

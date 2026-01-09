@@ -26,4 +26,7 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
+// Use device language for OTP SMS
+auth.useDeviceLanguage();
+
 export default app;

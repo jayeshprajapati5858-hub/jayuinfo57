@@ -1,80 +1,71 @@
-
 import React, { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, ArrowRight, Loader2, CheckCircle, KeyRound, ArrowLeft } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
 import { User } from '../types';
+import { auth } from '../services/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 interface UserAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (credentials: { email: string, password: string }) => Promise<boolean>;
+  onLogin: (user: User) => void;
   onSignup: (user: User) => Promise<boolean>;
-  onResetPassword: (email: string) => Promise<boolean>;
+  users: User[];
+  onResetPassword?: () => Promise<boolean>;
 }
 
-const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin, onSignup, onResetPassword }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin, onSignup, users }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
-  });
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
-
+    
     try {
-      if (mode === 'login') {
-        const success = await onLogin({ email: formData.email, password: formData.password });
-        if (success) {
-          onClose();
-        } else {
-          setError('Invalid email or password. Please try again.');
-        }
-      } else if (mode === 'signup') {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+      
+      // Check if user exists in our DB by email or UID
+      const existingUser = users.find(u => u.email === firebaseUser.email || u.id === firebaseUser.uid);
+      
+      if (existingUser) {
+        onLogin(existingUser);
+        onClose();
+      } else {
+        // Create new user profile from Google data
         const newUser: User = {
-          id: `user-${Date.now()}`,
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || undefined,
+          phoneNumber: firebaseUser.phoneNumber || undefined,
           joinDate: new Date().toISOString()
         };
+        
+        // Call parent signup handler (which saves to Firestore)
         const success = await onSignup(newUser);
         if (success) {
-          setSuccess(true);
-          setTimeout(() => {
-            setSuccess(false);
-            setMode('login');
-            setFormData(prev => ({ ...prev, password: '' })); // Clear password for login
-          }, 2000);
+          onLogin(newUser);
+          onClose();
         } else {
-          setError('Could not create account. Email might already exist.');
-        }
-      } else if (mode === 'forgot') {
-        const success = await onResetPassword(formData.email);
-        if (success) {
-          setSuccess(true);
-          setTimeout(() => {
-            setSuccess(false);
-            setMode('login');
-          }, 3000);
-        } else {
-          setError('Email not found in our records.');
+          setError("Failed to create account profile.");
         }
       }
-    } catch (err) {
-      setError('Connection error. Please check if the server is active.');
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      if (err.code === 'auth/popup-closed-by-user') {
+          setError("Sign-in cancelled.");
+      } else if (err.code === 'auth/unauthorized-domain') {
+          setError(`Domain not authorized: "${window.location.hostname}". Go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add this domain.`);
+      } else {
+          setError(err.message || "Failed to sign in with Google.");
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -85,117 +76,47 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
           <X size={20} />
         </button>
 
-        <div className="p-8 md:p-10">
-          <div className="text-center mb-8">
+        <div className="p-8 md:p-10 flex flex-col items-center text-center">
+          <div className="mb-8">
             <h2 className="text-3xl font-black italic uppercase tracking-tighter text-gray-900 dark:text-white">
-              {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
+              Welcome
             </h2>
             <p className="text-sm text-gray-500 mt-2">
-              {mode === 'login' ? 'Login to track your orders and earn coins.' : mode === 'signup' ? 'Join MobileHub and get 10% OFF on your first order!' : 'Enter your email to receive reset instructions.'}
+              Join MobileHub to track orders & get offers
             </p>
           </div>
 
-          {success && mode === 'forgot' ? (
-             <div className="text-center py-10 animate-in fade-in zoom-in">
-              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} />
-              </div>
-              <h3 className="text-xl font-bold dark:text-white uppercase">Link Sent!</h3>
-              <p className="text-gray-500 text-sm mt-2">Check your inbox for password reset instructions.</p>
-            </div>
-          ) : success && mode === 'signup' ? (
-            <div className="text-center py-10 animate-in fade-in zoom-in">
-              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} />
-              </div>
-              <h3 className="text-xl font-bold dark:text-white uppercase">Success!</h3>
-              <p className="text-gray-500 text-sm">Account created on server. Switching to login...</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === 'signup' && (
-                <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
-                  <input 
-                    required 
-                    type="text" 
-                    placeholder="Full Name" 
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-primary rounded-xl outline-none dark:text-white transition-all"
-                  />
-                </div>
-              )}
-              
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
-                <input 
-                  required 
-                  type="email" 
-                  placeholder="Email Address" 
-                  value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-primary rounded-xl outline-none dark:text-white transition-all"
-                />
-              </div>
+          <button 
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm relative overflow-hidden group"
+          >
+            {loading ? (
+              <Loader2 size={24} className="animate-spin text-primary" />
+            ) : (
+              <>
+                 <svg className="w-6 h-6" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" />
+                    <path fill="#EA4335" d="M12 4.36c1.61 0 3.06.56 4.21 1.64l3.16-3.16C17.45 1.09 14.97 0 12 0 7.7 0 3.99 2.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                 </svg>
+                 <span className="text-lg">Continue with Google</span>
+              </>
+            )}
+          </button>
 
-              {mode !== 'forgot' && (
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
-                  <input 
-                    required 
-                    type="password" 
-                    placeholder="Password" 
-                    value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-transparent focus:border-primary rounded-xl outline-none dark:text-white transition-all"
-                  />
-                </div>
-              )}
-
-              {mode === 'login' && (
-                <div className="text-right">
-                  <button type="button" onClick={() => setMode('forgot')} className="text-xs font-bold text-gray-500 hover:text-primary">
-                    Forgot Password?
-                  </button>
-                </div>
-              )}
-
-              {error && (
-                <p className="text-red-500 text-xs font-bold text-center animate-in shake-1 tracking-tight bg-red-50 dark:bg-red-900/10 p-2 rounded-lg">
-                  {error}
-                </p>
-              )}
-
-              <button 
-                disabled={loading}
-                type="submit" 
-                className="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : mode === 'forgot' ? <><KeyRound size={20} /> Reset Password</> : <><ArrowRight size={20} /> {mode === 'login' ? 'Login' : 'Signup'}</>}
-              </button>
-
-              <div className="text-center pt-4">
-                {mode === 'forgot' ? (
-                  <button 
-                    type="button"
-                    onClick={() => setMode('login')}
-                    className="text-xs font-bold text-gray-500 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto"
-                  >
-                    <ArrowLeft size={14} /> Back to Login
-                  </button>
-                ) : (
-                  <button 
-                    type="button"
-                    onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                    className="text-xs font-bold text-gray-500 hover:text-primary transition-colors"
-                  >
-                    {mode === 'login' ? "Don't have an account? Create one" : "Already have an account? Login"}
-                  </button>
-                )}
-              </div>
-            </form>
+          {error && (
+             <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-900/30 mt-6 animate-in slide-in-from-top-2 w-full">
+                <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-red-600 dark:text-red-400 text-xs font-bold leading-tight text-left">{error}</p>
+             </div>
           )}
+
+          <div className="mt-8 text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+             Secure Authentication by Google
+          </div>
+
         </div>
       </div>
     </div>

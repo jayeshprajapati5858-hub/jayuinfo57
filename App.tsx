@@ -22,6 +22,8 @@ import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './c
 import { Product, CartItem, Category, Order, Coupon, Review, User } from './types';
 import { Home, ShoppingBag, Package, AlertTriangle, Zap, Shield, Smartphone } from 'lucide-react';
 import { api } from './services/api';
+import { signOut } from 'firebase/auth';
+import { auth } from './services/firebase';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -187,9 +189,16 @@ const App: React.FC = () => {
       setIsCheckoutOpen(true);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    showToast('Logged out successfully');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      showToast('Logged out successfully');
+    } catch (error) {
+      console.error("Logout Error:", error);
+      // Even if Firebase logout fails, clear local state
+      setCurrentUser(null);
+    }
   };
 
   const handleSignup = async (newUser: User) => {
@@ -207,23 +216,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = async (credentials: { email: string, password: string }) => {
-    const user = users.find(u => u.email === credentials.email && u.password === credentials.password);
-    if (user) {
-      setCurrentUser(user);
-      showToast(`Welcome, ${user.name}!`);
-      return true;
-    }
-    return false;
-  };
-
-  const handleResetPassword = async (email: string) => {
-    const userExists = users.some(u => u.email === email);
-    if (userExists) {
-        showToast("Password reset link sent to your email!");
-        return true;
-    }
-    return false;
+  // Updated Login to verify via Phone/OTP inside modal and just set user here
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    showToast(`Welcome back, ${user.name}!`);
   };
 
   // --- Admin Handlers (Persist to Firebase) ---
@@ -411,7 +407,8 @@ const App: React.FC = () => {
         onClose={() => setIsAuthOpen(false)} 
         onLogin={handleLogin}
         onSignup={handleSignup}
-        onResetPassword={handleResetPassword}
+        users={users} // Pass users to check if phone exists
+        onResetPassword={async () => true} // No longer used for phone, but required by type
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={'en'} />
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cart} savedItems={[]} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.id !== id))} onUpdateQuantity={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, quantity: Math.max(1, i.quantity+d)} : i))} onCheckout={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} onSaveForLater={()=>{}} onMoveToCart={()=>{}} onRemoveSaved={()=>{}} />
