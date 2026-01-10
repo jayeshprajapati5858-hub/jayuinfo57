@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CartItem, Coupon, Order, User } from '../types';
-import { X, CheckCircle, ArrowLeft, Gift, Smartphone, MessageCircle, MapPin, ShoppingBag, ChevronRight, CreditCard, ShieldCheck, Loader2, QrCode } from 'lucide-react';
+import { X, CheckCircle, ArrowLeft, Gift, Smartphone, MessageCircle, MapPin, ShoppingBag, ChevronRight, CreditCard, ShieldCheck, Loader2, QrCode, Upload } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 import Invoice from './Invoice';
 
@@ -9,7 +9,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: CartItem[];
-  onPlaceOrder: (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number, paymentMethod: 'COD' | 'UPI') => Order;
+  onPlaceOrder: (customerDetails: { name: string; address: string; city: string }, discount: number, finalTotal: number, paymentMethod: 'COD' | 'UPI', paymentScreenshot?: string) => Order;
   coupons: Coupon[];
   currentUser: User | null;
 }
@@ -27,6 +27,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState('');
+
+  // Screenshot State
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen && currentUser) {
@@ -73,7 +77,23 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
       setStep('payment');
   };
 
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentScreenshot(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handlePlaceOrder = () => {
+    if (paymentMethod === 'UPI' && !paymentScreenshot) {
+        alert("Please upload the payment screenshot to confirm your order.");
+        return;
+    }
+
     setStep('processing');
     setTimeout(() => {
       const fullAddress = `${formData.address}, ${formData.city} - ${formData.zip}. (Phone: ${formData.phone})`;
@@ -81,7 +101,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
           { name: formData.name, address: fullAddress, city: formData.city }, 
           discountAmount, 
           finalTotal,
-          paymentMethod
+          paymentMethod,
+          paymentScreenshot || undefined
       );
       setLastOrder(order);
       setStep('success');
@@ -98,6 +119,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
     setAppliedCoupon(null);
     setCouponCode('');
     setPaymentMethod('COD');
+    setPaymentScreenshot(null);
     onClose();
   };
 
@@ -299,7 +321,27 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                             <div className="bg-white p-2 rounded-xl shadow-sm mb-4">
                                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=gpay-11241690646@okbizaxis&pn=MobileHub&am=${finalTotal}&cu=INR`} alt="Payment QR" className="w-40 h-40" />
                             </div>
-                            <p className="text-xs text-gray-500">After payment, click Confirm Order below.</p>
+                            
+                            <div className="w-full max-w-xs mt-4">
+                               <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Upload Payment Screenshot</p>
+                               <div 
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center bg-white dark:bg-gray-900"
+                               >
+                                  {paymentScreenshot ? (
+                                      <div className="relative w-full">
+                                         <img src={paymentScreenshot} alt="Payment Proof" className="max-h-32 mx-auto rounded-lg" />
+                                         <span className="text-[10px] text-green-500 font-bold block mt-2">Screenshot Attached!</span>
+                                      </div>
+                                  ) : (
+                                      <>
+                                          <Upload size={24} className="text-gray-400 mb-2" />
+                                          <span className="text-xs text-gray-500">Click to upload screenshot</span>
+                                      </>
+                                  )}
+                                  <input type="file" ref={fileInputRef} onChange={handleScreenshotUpload} className="hidden" accept="image/*" />
+                               </div>
+                            </div>
                         </div>
                     )}
 

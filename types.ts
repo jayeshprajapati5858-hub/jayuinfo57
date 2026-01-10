@@ -78,6 +78,7 @@ export interface Order {
   verificationCode?: string;
   paymentMethod?: 'COD' | 'UPI'; // Added payment method
   paymentStatus?: 'Pending' | 'Paid'; // Added payment status
+  paymentScreenshot?: string; // Added payment proof
 }
 
 export interface Coupon {

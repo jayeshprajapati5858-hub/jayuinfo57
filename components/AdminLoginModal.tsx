@@ -19,7 +19,8 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onLo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') {
+    // Updated Password as per request
+    if (password === 'Jayesh@15194$') {
       onLogin();
       onClose();
       setPassword('');
@@ -60,7 +61,7 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onLo
             <Lock className="text-white" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Admin Access</h2>
-          <p className="text-gray-500 mt-2">Enter password to manage store.</p>
+          <p className="text-gray-500 mt-2">Enter secure password to manage store.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -78,7 +79,7 @@ const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onLo
             />
             {error && (
               <p className="text-red-500 text-sm text-center font-medium animate-in slide-in-from-top-1">
-                Incorrect password! Try 'admin123'
+                Incorrect password. Access Denied.
               </p>
             )}
           </div>

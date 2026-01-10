@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Loader2, AlertCircle } from 'lucide-react';
+import { X, Loader2, AlertCircle, User as UserIcon } from 'lucide-react';
 import { User } from '../types';
 import { auth } from '../services/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -56,13 +56,24 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
       if (err.code === 'auth/popup-closed-by-user') {
           setError("Sign-in cancelled.");
       } else if (err.code === 'auth/unauthorized-domain') {
-          setError(`Domain not authorized: "${window.location.hostname}". Go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add this domain.`);
+          setError(`Domain error. Please use "Guest Login" below for now.`);
       } else {
           setError(err.message || "Failed to sign in with Google.");
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGuestLogin = () => {
+    onLogin({
+      id: 'guest-' + Date.now(),
+      name: 'Guest User',
+      email: '',
+      phoneNumber: '',
+      joinDate: new Date().toISOString()
+    });
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -104,6 +115,19 @@ const UserAuthModal: React.FC<UserAuthModalProps> = ({ isOpen, onClose, onLogin,
                  <span className="text-lg">Continue with Google</span>
               </>
             )}
+          </button>
+
+          <div className="flex items-center gap-4 w-full my-6">
+            <div className="h-[1px] bg-gray-200 dark:bg-gray-700 flex-1"></div>
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">OR</span>
+            <div className="h-[1px] bg-gray-200 dark:bg-gray-700 flex-1"></div>
+          </div>
+
+          <button 
+            onClick={handleGuestLogin}
+            className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2"
+          >
+            <UserIcon size={20} /> Continue as Guest
           </button>
 
           {error && (

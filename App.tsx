@@ -327,7 +327,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePlaceOrder = (details: { name: string; address: string; city: string }, discount: number, finalTotal: number, paymentMethod: 'COD' | 'UPI' = 'COD') => {
+  const handlePlaceOrder = (details: { name: string; address: string; city: string }, discount: number, finalTotal: number, paymentMethod: 'COD' | 'UPI' = 'COD', paymentScreenshot?: string) => {
     const newOrder: Order = { 
         id: `ord-${Date.now()}`, 
         customerName: details.name, 
@@ -340,7 +340,8 @@ const App: React.FC = () => {
         status: 'Pending',
         verificationCode: 'MH' + Math.floor(Math.random() * 900000 + 100000),
         paymentMethod: paymentMethod,
-        paymentStatus: paymentMethod === 'UPI' ? 'Paid' : 'Pending'
+        paymentStatus: paymentMethod === 'UPI' ? 'Paid' : 'Pending',
+        paymentScreenshot: paymentScreenshot
     };
 
     api.createOrder(newOrder).then((saved) => {

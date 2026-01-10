@@ -97,16 +97,9 @@ export const api = {
     }
   },
 
-  // NEW: Update User Profile
   updateUser: async (user: User): Promise<boolean> => {
     await ensureAuth();
     try {
-      // Logic to find user doc by ID stored in user object
-      // Note: If ID from props matches doc ID. 
-      // If the user ID from auth is used as doc ID, utilize that.
-      // Here we assume we might need to query if ID isn't the key, but simpler is assuming ID is key or we query.
-      // For simplicity in this mock-up structure:
-      
       const q = query(collection(db, USERS_COLLECTION));
       const snapshot = await getDocs(q);
       const userDoc = snapshot.docs.find(d => d.data().id === user.id);
@@ -228,8 +221,25 @@ export const api = {
   createOrder: async (order: Order): Promise<Order | null> => {
     await ensureAuth();
     try {
-      await setDoc(doc(db, ORDERS_COLLECTION, order.id), order);
-      return order;
+      let finalOrder = { ...order };
+      
+      // Upload Payment Screenshot if it exists and is base64
+      if (order.paymentScreenshot && order.paymentScreenshot.startsWith('data:image')) {
+         try {
+           const storageRef = ref(storage, `orders/${order.id}_payment.jpg`);
+           await uploadString(storageRef, order.paymentScreenshot, 'data_url');
+           const url = await getDownloadURL(storageRef);
+           finalOrder.paymentScreenshot = url;
+         } catch (uploadError) {
+           console.error("Error uploading payment screenshot:", uploadError);
+           // Continue creating order even if image fails, but maybe clear the field or keep base64?
+           // Keeping base64 might fail doc size limit, so let's set to error string if fail.
+           finalOrder.paymentScreenshot = "Upload Failed"; 
+         }
+      }
+
+      await setDoc(doc(db, ORDERS_COLLECTION, order.id), finalOrder);
+      return finalOrder;
     } catch (error) {
       console.error("Error creating order:", error);
       return null;

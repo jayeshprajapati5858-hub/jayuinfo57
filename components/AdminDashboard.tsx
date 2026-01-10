@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, Order, Category, Coupon, Review, User, Announcement } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server, Settings, Megaphone, Save } from 'lucide-react';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server, Settings, Megaphone, Save, Eye, ExternalLink } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 import { api } from '../services/api';
 
@@ -294,14 +294,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                             ))}
                         </td>
-                        <td className="p-4 font-bold dark:text-white">₹{(order.finalTotal||order.total).toLocaleString()}</td>
+                        <td className="p-4 font-bold dark:text-white">
+                            <div>₹{(order.finalTotal||order.total).toLocaleString()}</div>
+                            {order.paymentMethod === 'UPI' && (
+                                <div className="mt-1">
+                                    <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">UPI</span>
+                                    {order.paymentScreenshot && (
+                                        <div className="mt-2">
+                                            <a href={order.paymentScreenshot} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg border border-gray-200 overflow-hidden relative group">
+                                                <img src={order.paymentScreenshot} alt="Payment Proof" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <ExternalLink size={12} className="text-white" />
+                                                </div>
+                                            </a>
+                                            <span className="text-[9px] text-gray-400 block mt-0.5">Click to view</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </td>
                         <td className="p-4"><span className={`px-2 py-1 rounded text-xs ${order.status === 'Shipped' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>{order.status}</span></td>
-                        <td className="p-4 flex gap-2">
-                            <button onClick={() => handlePrintOrder(order)} className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded transition-colors"><Printer size={16}/></button>
+                        <td className="p-4 flex gap-2 items-start">
+                            <button onClick={() => handlePrintOrder(order)} className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded transition-colors" title="Print Invoice"><Printer size={16}/></button>
                             {order.status === 'Pending' && (
                                 <>
-                                <button onClick={() => onUpdateOrderStatus(order.id, 'Shipped')} className="p-1.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded transition-colors"><Check size={16}/></button>
-                                <button onClick={() => onUpdateOrderStatus(order.id, 'Rejected')} className="p-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded transition-colors"><X size={16}/></button>
+                                <button onClick={() => onUpdateOrderStatus(order.id, 'Shipped')} className="p-1.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded transition-colors" title="Mark Shipped"><Check size={16}/></button>
+                                <button onClick={() => onUpdateOrderStatus(order.id, 'Rejected')} className="p-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded transition-colors" title="Reject Order"><X size={16}/></button>
                                 </>
                             )}
                         </td>
@@ -326,7 +344,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             ))}
                         </div>
                         <div className="flex justify-between items-center pt-2">
-                             <span className="font-bold text-lg dark:text-white">₹{(order.finalTotal||order.total).toLocaleString()}</span>
+                             <div>
+                                <span className="font-bold text-lg dark:text-white">₹{(order.finalTotal||order.total).toLocaleString()}</span>
+                                {order.paymentMethod === 'UPI' && (
+                                   <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[10px] bg-purple-100 text-purple-700 px-1 rounded">UPI</span>
+                                      {order.paymentScreenshot && (
+                                          <a href={order.paymentScreenshot} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-600 underline font-bold flex items-center gap-1">
+                                              <ImageIcon size={10} /> View Proof
+                                          </a>
+                                      )}
+                                   </div>
+                                )}
+                             </div>
                              <div className="flex gap-2">
                                 <button onClick={() => handlePrintOrder(order)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"><Printer size={18}/></button>
                                 {order.status === 'Pending' && (
@@ -344,6 +374,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
         
+        {/* ... Rest of the tabs remain the same ... */}
         {activeTab === 'products' && (
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8">

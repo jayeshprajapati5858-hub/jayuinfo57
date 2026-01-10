@@ -96,10 +96,7 @@ const Navbar: React.FC<NavbarProps> = ({
                <span className="text-xs font-bold text-gray-900 dark:text-white uppercase">{language}</span>
              </button>
 
-             {/* Admin Button */}
-             <button onClick={onAdminClick} className="p-3 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all" title="Admin Access">
-                <Lock size={20} />
-             </button>
+             {/* Admin Button REMOVED - Access via URL only */}
 
              <button onClick={onToggleDarkMode} className="p-3 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -207,12 +204,8 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span className="text-xs font-bold dark:text-white">Wishlist</span>
                  </button>
               </div>
-
-              <div className="pt-2">
-                 <button onClick={() => { onAdminClick(); setIsMenuOpen(false); }} className="text-xs text-gray-400 font-medium text-center w-full flex items-center justify-center gap-2">
-                    <Lock size={12} /> Admin Access
-                 </button>
-              </div>
+              
+              {/* Admin Button REMOVED from Mobile Menu - Access via URL only */}
            </div>
         </div>
       )}
