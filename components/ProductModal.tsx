@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, Review } from '../types';
-import { X, Star, ShoppingCart, RotateCcw, Zap, ArrowRight, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Product, Review, User } from '../types';
+import { X, Star, ShoppingCart, RotateCcw, Zap, ArrowRight, Info, ChevronLeft, ChevronRight, MessageSquare, Check } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
 interface ProductModalProps {
@@ -12,20 +12,33 @@ interface ProductModalProps {
   onBuyNow: (product: Product) => void; 
   onAddReview: (productId: string, review: Review) => void;
   language?: any;
+  currentUser?: User | null;
 }
 
-const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onBuyNow, onAddReview, language = 'en' }) => {
+const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, onAddToCart, onBuyNow, onAddReview, language = 'en', currentUser }) => {
   const t = TRANSLATIONS['en'];
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [activeImage, setActiveImage] = useState<string>('');
+  
+  // Review Form State
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewerName, setReviewerName] = useState('');
 
   useEffect(() => {
     if (product) {
         // Default to first available color and main image
         setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0] : 'Default');
         setActiveImage(product.images && product.images.length > 0 ? product.images[0] : product.image);
+        
+        // Reset review form
+        setShowReviewForm(false);
+        setReviewRating(5);
+        setReviewComment('');
+        setReviewerName(currentUser ? currentUser.name : '');
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, currentUser]);
 
   if (!isOpen || !product) return null;
 
@@ -40,6 +53,22 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
   const handleBuyNow = () => {
       onBuyNow({ ...product, selectedColor: selectedColor });
       onClose();
+  };
+  
+  const handleSubmitReview = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!reviewerName.trim() || !reviewComment.trim()) return;
+      
+      const newReview: Review = {
+          id: Date.now().toString(),
+          userName: reviewerName,
+          rating: reviewRating,
+          comment: reviewComment,
+          date: new Date().toISOString()
+      };
+      
+      onAddReview(product.id, newReview);
+      setShowReviewForm(false);
   };
 
   const nextImage = (e?: React.MouseEvent) => {
@@ -202,16 +231,61 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 
             {/* Reviews Section */}
             <div className="border-t border-gray-100 dark:border-gray-800 p-8 bg-gray-50/50 dark:bg-gray-900/50 flex-grow">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <Star size={20} className="text-yellow-400 fill-yellow-400" /> Customer Reviews
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Star size={20} className="text-yellow-400 fill-yellow-400" /> Customer Reviews
+                </h3>
+                <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                    {showReviewForm ? <><X size={14}/> Cancel</> : <><MessageSquare size={14}/> Write a Review</>}
+                </button>
+              </div>
+
+              {showReviewForm && (
+                  <form onSubmit={handleSubmitReview} className="mb-8 bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-2">
+                      <div className="mb-4">
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Rating</label>
+                          <div className="flex gap-2">
+                              {[1,2,3,4,5].map(star => (
+                                <button type="button" key={star} onClick={() => setReviewRating(star)}>
+                                    <Star size={24} className={star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"} />
+                                </button>
+                              ))}
+                          </div>
+                      </div>
+                      <div className="mb-4">
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
+                          <input 
+                            className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 dark:text-white outline-none focus:border-primary transition-colors"
+                            placeholder="John Doe"
+                            value={reviewerName}
+                            onChange={e => setReviewerName(e.target.value)}
+                            required
+                          />
+                      </div>
+                      <div className="mb-4">
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Review</label>
+                          <textarea 
+                            rows={3}
+                            className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 dark:text-white outline-none focus:border-primary transition-colors resize-none"
+                            placeholder="Share your experience..."
+                            value={reviewComment}
+                            onChange={e => setReviewComment(e.target.value)}
+                            required
+                          />
+                      </div>
+                      <button type="submit" className="w-full py-2 bg-gray-900 dark:bg-primary text-white rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform">
+                          Submit Review
+                      </button>
+                  </form>
+              )}
+
               <div className="space-y-4">
                 {product.reviews.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-400 text-sm italic">No reviews yet. Be the first one to review!</p>
                   </div>
                 ) : (
-                  product.reviews.map(review => (
+                  product.reviews.slice().reverse().map(review => (
                     <div key={review.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <span className="font-semibold text-sm text-gray-900 dark:text-white">{review.userName}</span>
@@ -234,4 +308,3 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 };
 
 export default ProductModal;
-    

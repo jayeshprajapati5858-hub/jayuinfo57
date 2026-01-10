@@ -277,6 +277,26 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddReview = async (productId: string, review: Review) => {
+    const success = await api.addReview(productId, review);
+    if (success) {
+      setProducts(prev => prev.map(p => {
+        if (p.id === productId) {
+           const newReviews = [...p.reviews, review];
+           // Calculate new average rating
+           const totalRating = newReviews.reduce((sum, r) => sum + r.rating, 0);
+           const newRating = Number((totalRating / newReviews.length).toFixed(1));
+           
+           return { ...p, reviews: newReviews, rating: newRating };
+        }
+        return p;
+      }));
+      showToast('Review submitted successfully!');
+    } else {
+      showToast('Failed to add review');
+    }
+  };
+
   const handlePlaceOrder = (details: { name: string; address: string; city: string }, discount: number, finalTotal: number) => {
     const newOrder: Order = { 
         id: `ord-${Date.now()}`, 
@@ -454,8 +474,9 @@ const App: React.FC = () => {
         onClose={() => setSelectedProduct(null)} 
         onAddToCart={addToCart} 
         onBuyNow={handleModalBuyNow}
-        onAddReview={()=>{}} 
+        onAddReview={handleAddReview} 
         language={'en'} 
+        currentUser={currentUser}
       />
       
       <CheckoutModal 
@@ -482,6 +503,7 @@ const App: React.FC = () => {
           onUpdateStock={handleUpdateStock} 
           onAddCoupon={handleAddCoupon} 
           onDeleteCoupon={handleDeleteCoupon} 
+          onAddReview={handleAddReview}
           onClose={() => setIsAdminDashboardOpen(false)} 
         />
       )}

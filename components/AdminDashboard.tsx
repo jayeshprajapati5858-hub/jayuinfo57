@@ -400,7 +400,153 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
         )}
+
+        {activeTab === 'coupons' && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8">
+               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Create New Coupon</h2>
+               <form onSubmit={handleCouponSubmit} className="flex gap-4 items-end">
+                  <div className="flex-1">
+                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Coupon Code</label>
+                     <input 
+                        required 
+                        type="text" 
+                        placeholder="e.g. SUMMER50" 
+                        value={newCoupon.code} 
+                        onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})} 
+                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 outline-none focus:border-primary dark:text-white font-mono uppercase" 
+                     />
+                  </div>
+                  <div className="w-32">
+                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Discount (%)</label>
+                     <input 
+                        required 
+                        type="number" 
+                        min="1" 
+                        max="100" 
+                        value={newCoupon.discountPercent} 
+                        onChange={e => setNewCoupon({...newCoupon, discountPercent: Number(e.target.value)})} 
+                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 outline-none focus:border-primary dark:text-white" 
+                     />
+                  </div>
+                  <button type="submit" className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 transition-colors h-[50px]">
+                     <Plus size={20} /> Add
+                  </button>
+               </form>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+               {coupons.map(coupon => (
+                  <div key={coupon.code} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 flex justify-between items-center group relative overflow-hidden">
+                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
+                        <Tag size={64} />
+                     </div>
+                     <div className="relative z-10">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Coupon</p>
+                        <h3 className="text-2xl font-black text-primary font-mono">{coupon.code}</h3>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{coupon.discountPercent}% Off</p>
+                     </div>
+                     <button onClick={() => onDeleteCoupon(coupon.code)} className="relative z-10 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
+                        <Trash2 size={20} />
+                     </button>
+                  </div>
+               ))}
+               {coupons.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-gray-400">
+                     <Tag size={48} className="mx-auto mb-4 opacity-20" />
+                     <p>No active coupons found.</p>
+                  </div>
+               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+             <table className="w-full text-left">
+                <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-sm">
+                  <tr>
+                    <th className="p-4">Name</th>
+                    <th className="p-4">Email/Phone</th>
+                    <th className="p-4">Joined</th>
+                    <th className="p-4">User ID</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {users.map(user => (
+                     <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td className="p-4 font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">
+                              {user.name[0]}
+                           </div>
+                           {user.name}
+                        </td>
+                        <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{user.email || user.phoneNumber || 'N/A'}</td>
+                        <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{new Date(user.joinDate).toLocaleDateString()}</td>
+                        <td className="p-4 text-xs font-mono text-gray-400">{user.id}</td>
+                     </tr>
+                  ))}
+                </tbody>
+             </table>
+             {users.length === 0 && <div className="p-8 text-center text-gray-400">No users found.</div>}
+           </div>
+        )}
       </div>
+
+      {reviewModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReviewModalOpen(null)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
+             <button onClick={() => setReviewModalOpen(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+                <X size={20} />
+             </button>
+             
+             <h3 className="text-xl font-bold mb-6 dark:text-white flex items-center gap-2">
+                <MessageSquare className="text-primary" /> Add Admin Review
+             </h3>
+             
+             <form onSubmit={handleReviewSubmit} className="space-y-4">
+                <div>
+                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">User Name (Display)</label>
+                   <input 
+                     className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 dark:text-white outline-none focus:border-primary transition-colors"
+                     placeholder="e.g. Verified Buyer" 
+                     value={newReview.userName} 
+                     onChange={e => setNewReview({...newReview, userName: e.target.value})}
+                     required
+                   />
+                </div>
+                
+                <div>
+                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Rating</label>
+                   <div className="flex gap-2">
+                      {[1,2,3,4,5].map(star => (
+                        <button type="button" key={star} onClick={() => setNewReview({...newReview, rating: star})}>
+                           <Star size={28} className={star <= newReview.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-700"} />
+                        </button>
+                      ))}
+                   </div>
+                </div>
+                
+                <div>
+                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Review Content</label>
+                   <textarea 
+                     rows={3}
+                     className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 dark:text-white outline-none focus:border-primary transition-colors"
+                     placeholder="Write the review text here..." 
+                     value={newReview.comment} 
+                     onChange={e => setNewReview({...newReview, comment: e.target.value})}
+                     required
+                   />
+                </div>
+                
+                <button type="submit" disabled={isUploading} className="w-full py-3 bg-gray-900 dark:bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2">
+                   {isUploading ? <Loader2 className="animate-spin" /> : <Check size={18} />} Submit Review
+                </button>
+             </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

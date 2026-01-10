@@ -11,7 +11,8 @@ import {
   orderBy,
   getDoc,
   limit,
-  writeBatch
+  writeBatch,
+  arrayUnion
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -206,6 +207,20 @@ export const api = {
       return true;
     } catch (error) {
       console.error("Error deleting product:", error);
+      return false;
+    }
+  },
+
+  addReview: async (productId: string, review: Review): Promise<boolean> => {
+    await ensureAuth();
+    try {
+      const productRef = doc(db, PRODUCTS_COLLECTION, productId);
+      await updateDoc(productRef, {
+        reviews: arrayUnion(review)
+      });
+      return true;
+    } catch (error) {
+      console.error("Error adding review:", error);
       return false;
     }
   },
