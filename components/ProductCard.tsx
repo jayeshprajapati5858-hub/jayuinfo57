@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Product, Language } from '../types';
 import { Star, Heart, RotateCcw, Zap, ShoppingCart, ArrowRight } from 'lucide-react';
@@ -26,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const t = TRANSLATIONS[language];
 
   return (
-    <div className={`group bg-white dark:bg-gray-900 rounded-[24px] sm:rounded-[32px] shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 overflow-hidden border border-gray-50 dark:border-gray-800 flex flex-col h-full ${isOutOfStock ? 'opacity-75' : ''} animate-fadeInUp`}>
+    <div className={`group bg-white dark:bg-gray-900 rounded-[24px] sm:rounded-[32px] shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden border border-gray-50 dark:border-gray-800 flex flex-col h-full ${isOutOfStock ? 'opacity-75' : ''} animate-fadeInUp`}>
       <div 
         className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800 cursor-pointer p-3 sm:p-4"
         onClick={() => onViewDetails(product)}

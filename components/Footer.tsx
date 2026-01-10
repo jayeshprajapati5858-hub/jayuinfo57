@@ -13,6 +13,11 @@ const Footer: React.FC = () => {
     }, 100);
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,11 +25,14 @@ const Footer: React.FC = () => {
           
           {/* Brand Info */}
           <div>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="bg-primary p-1.5 rounded-lg text-white">
+            <div 
+              className="flex items-center gap-2 mb-6 cursor-pointer group w-fit" 
+              onClick={handleLogoClick}
+            >
+              <div className="bg-primary p-1.5 rounded-lg text-white group-hover:bg-blue-600 transition-colors">
                 <Smartphone size={20} />
               </div>
-              <span className="text-xl font-bold text-white">
+              <span className="text-xl font-bold text-white group-hover:text-primary transition-colors">
                 MobileHub
               </span>
             </div>
@@ -48,7 +56,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-6">Quick Links</h3>
             <ul className="space-y-4 text-sm">
-              <li><Link to="/" className="hover:text-primary transition-colors text-left">Home</Link></li>
+              <li><Link to="/" onClick={() => window.scrollTo(0,0)} className="hover:text-primary transition-colors text-left">Home</Link></li>
               <li><button onClick={handleScrollToProducts} className="hover:text-primary transition-colors text-left">All Products</button></li>
               <li><Link to="/about" className="hover:text-primary transition-colors text-left">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors text-left">Contact Us</Link></li>

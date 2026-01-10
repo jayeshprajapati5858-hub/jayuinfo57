@@ -22,8 +22,9 @@ import AuthenticityVerifier from './components/AuthenticityVerifier';
 import LegalPage from './components/LegalPage';
 import ContactPage from './components/ContactPage';
 import AnnouncementBar from './components/AnnouncementBar';
+import FeaturesSection from './components/FeaturesSection';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review, User, Announcement } from './types';
+import { Product, CartItem, Category, Order, Coupon, Review, User, Announcement, Language } from './types';
 import { Package, Zap, Shield, Smartphone, Home, ShoppingBag } from 'lucide-react';
 import { api } from './services/api';
 import { signOut } from 'firebase/auth';
@@ -49,6 +50,12 @@ const App: React.FC = () => {
     }
     return false;
   });
+
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem('mh_lang');
+    return (saved as Language) || 'en';
+  });
+
   const [serverStatus, setServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
 
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +83,7 @@ const App: React.FC = () => {
   // New state to handle flow redirection after login
   const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
 
-  const t = TRANSLATIONS['en'];
+  const t = TRANSLATIONS[language];
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -90,6 +97,15 @@ const App: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  // Language Persistence
+  useEffect(() => {
+    localStorage.setItem('mh_lang', language);
+  }, [language]);
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'en' ? 'gu' : 'en');
+  };
 
   useEffect(() => {
     if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
@@ -142,12 +158,8 @@ const App: React.FC = () => {
       // Initialize Announcement
       const dbAnnouncement = await api.getAnnouncement();
       if (dbAnnouncement && dbAnnouncement.message) {
-         // If announcement exists in DB, use it
-         // Fix: If it was disabled by mistake during dev, we might want to override, 
-         // but respecting DB is standard. However, if user says "not showing", we ensure local state is valid.
          setAnnouncement(dbAnnouncement);
       } else {
-        // If no announcement exists in DB (or message is empty), create default and FORCE SHOW
         const defaultAnnouncement = { 
           message: '🎉 Welcome to MobileHub! Sale is Live!', 
           isActive: true 
@@ -353,14 +365,16 @@ const App: React.FC = () => {
     .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
-  // Home Page Component to keep routes clean
+  // Home Page Component
   const HomePage = () => (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <HeroSection 
         onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
-        language={'en'}
+        language={language}
       />
       
+      <FeaturesSection language={language} />
+
       {/* Category Shortcuts */}
       <div className="grid grid-cols-3 gap-3 mb-8 animate-fadeInUp stagger-1">
             <button onClick={() => setSelectedCategory(Category.CHARGER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.CHARGER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
@@ -396,7 +410,7 @@ const App: React.FC = () => {
             onBuyNow={(p) => buyNow(p)}
             onViewDetails={setSelectedProduct} 
             onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
-            language={'en'}
+            language={language}
           />
         )) : (
           <div className="col-span-full py-12 text-center text-gray-400 flex flex-col items-center">
@@ -428,6 +442,8 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         darkMode={darkMode} 
         onToggleDarkMode={() => setDarkMode(!darkMode)}
+        language={language}
+        onToggleLanguage={toggleLanguage}
       />
 
       <Routes>
@@ -470,7 +486,7 @@ const App: React.FC = () => {
         users={users} 
         onResetPassword={async () => true} 
       />
-      <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={'en'} />
+      <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={language} />
       <CartSidebar 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
@@ -501,7 +517,7 @@ const App: React.FC = () => {
         onAddToCart={addToCart} 
         onBuyNow={handleModalBuyNow}
         onAddReview={handleAddReview} 
-        language={'en'} 
+        language={language} 
         currentUser={currentUser}
       />
       

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock } from 'lucide-react';
-import { User } from '../types';
+import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock, Languages } from 'lucide-react';
+import { User, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 interface NavbarProps {
@@ -19,6 +19,8 @@ interface NavbarProps {
   onLogout: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  language: Language;
+  onToggleLanguage: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -35,8 +37,10 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   darkMode,
   onToggleDarkMode,
+  language,
+  onToggleLanguage
 }) => {
-  const t = TRANSLATIONS['en'];
+  const t = TRANSLATIONS[language];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -81,6 +85,17 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
+             
+             {/* Language Toggle */}
+             <button 
+               onClick={onToggleLanguage}
+               className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+               title="Switch Language"
+             >
+               <Languages size={18} className="text-gray-600 dark:text-gray-300" />
+               <span className="text-xs font-bold text-gray-900 dark:text-white uppercase">{language}</span>
+             </button>
+
              {/* Admin Button */}
              <button onClick={onAdminClick} className="p-3 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all" title="Admin Access">
                 <Lock size={20} />
@@ -127,6 +142,9 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Search Icon & Menu */}
           <div className="flex md:hidden items-center gap-4">
+            <button onClick={onToggleLanguage} className="text-xs font-bold uppercase bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+              {language}
+            </button>
             <button onClick={onToggleDarkMode} className="text-gray-400">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>

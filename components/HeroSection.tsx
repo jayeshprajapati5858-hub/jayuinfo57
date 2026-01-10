@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowRight, Zap } from 'lucide-react';
 import { Language } from '../types';
@@ -15,9 +16,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow, language }) => {
     <div className="relative bg-gray-900 rounded-[32px] overflow-hidden mb-8 text-white shadow-2xl animate-fadeInUp">
       <div className="absolute inset-0">
         <img 
-          src="https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=1200&q=80" 
+          src="https://images.unsplash.com/photo-1616348436168-de43ad0db179?auto=format&fit=crop&w=1600&q=80" 
           alt="Mobile Accessories" 
-          className="w-full h-full object-cover opacity-40 transition-transform duration-[10s] hover:scale-110"
+          className="w-full h-full object-cover opacity-50 transition-transform duration-[10s] hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent md:bg-gradient-to-r"></div>
       </div>
@@ -32,7 +33,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow, language }) => {
           <span className="text-primary">{t.hero_title_2}</span>
         </h1>
         
-        <p className="text-gray-400 text-sm md:text-lg mb-8 max-w-md animate-fadeInUp stagger-3">
+        <p className="text-gray-300 text-sm md:text-lg mb-8 max-w-md animate-fadeInUp stagger-3 font-medium">
           {t.hero_desc}
         </p>
         

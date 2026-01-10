@@ -7,7 +7,7 @@ export enum Category {
   CABLE = 'Cables'
 }
 
-export type Language = 'en'; // Restricted to English only
+export type Language = 'en' | 'gu'; // Added 'gu' for Gujarati
 
 export interface User {
   id: string;
