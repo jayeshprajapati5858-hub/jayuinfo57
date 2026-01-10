@@ -297,7 +297,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                         <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col items-center text-center animate-in zoom-in-95">
                             <p className="font-bold text-gray-900 dark:text-white mb-4">Scan to Pay ₹{finalTotal}</p>
                             <div className="bg-white p-2 rounded-xl shadow-sm mb-4">
-                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=mobileshop@upi&pn=MobileHub&am=${finalTotal}&cu=INR`} alt="Payment QR" className="w-40 h-40" />
+                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=gpay-11241690646@okbizaxis&pn=MobileHub&am=${finalTotal}&cu=INR`} alt="Payment QR" className="w-40 h-40" />
                             </div>
                             <p className="text-xs text-gray-500">After payment, click Confirm Order below.</p>
                         </div>
