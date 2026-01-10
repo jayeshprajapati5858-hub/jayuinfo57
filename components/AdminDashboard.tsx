@@ -1,8 +1,9 @@
 
-import React, { useState, useRef } from 'react';
-import { Product, Order, Category, Coupon, Review, User } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Product, Order, Category, Coupon, Review, User, Announcement } from '../types';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server, Settings, Megaphone, Save } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
+import { api } from '../services/api';
 
 interface AdminDashboardProps {
   orders: Order[];
@@ -35,7 +36,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddReview,
   onClose 
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users' | 'settings'>('orders');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -53,6 +54,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newReview, setNewReview] = useState({ userName: '', rating: 5, comment: '', image: '' });
   const [reviewImageFile, setReviewImageFile] = useState<File | null>(null);
   const [newCoupon, setNewCoupon] = useState({ code: '', discountPercent: 10 });
+  
+  // Announcement State
+  const [announcement, setAnnouncement] = useState<Announcement>({ message: '', isActive: false });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      const fetchAnnouncement = async () => {
+        const data = await api.getAnnouncement();
+        if (data) setAnnouncement(data);
+      };
+      fetchAnnouncement();
+    }
+  }, [activeTab]);
 
   const totalEarnings = orders
     .filter(o => o.status !== 'Rejected')
@@ -155,6 +170,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onAddCoupon({ code: newCoupon.code.toUpperCase(), discountPercent: Number(newCoupon.discountPercent), isActive: true });
     setNewCoupon({ code: '', discountPercent: 10 });
   };
+  
+  const handleSaveAnnouncement = async () => {
+    setIsSavingSettings(true);
+    await api.updateAnnouncement(announcement);
+    setIsSavingSettings(false);
+  };
 
   const handlePrintOrder = (order: Order) => {
     const printWindow = window.open('', '', 'width=800,height=600');
@@ -238,6 +259,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button onClick={() => setActiveTab('users')} className={`flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'users' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
             <Users size={18} /> Users
+          </button>
+          <button onClick={() => setActiveTab('settings')} className={`flex-shrink-0 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all text-sm ${activeTab === 'settings' ? 'bg-primary text-white shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+            <Settings size={18} /> Settings
           </button>
         </div>
 
@@ -489,6 +513,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </tbody>
              </table>
              {users.length === 0 && <div className="p-8 text-center text-gray-400">No users found.</div>}
+           </div>
+        )}
+        
+        {activeTab === 'settings' && (
+           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8 space-y-8">
+             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+               <Megaphone className="text-primary" /> Global Announcement
+             </h2>
+             
+             <div className="max-w-xl">
+               <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Headline Text</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Diwali Sale is Live! Get 50% Off" 
+                    value={announcement.message}
+                    onChange={(e) => setAnnouncement({...announcement, message: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 outline-none focus:border-primary dark:text-white"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">This text will appear at the very top of the website.</p>
+               </div>
+
+               <div className="flex items-center gap-3 mb-6">
+                  <button 
+                    onClick={() => setAnnouncement({...announcement, isActive: !announcement.isActive})}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${announcement.isActive ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-700'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${announcement.isActive ? 'left-7' : 'left-1'}`} />
+                  </button>
+                  <span className="text-sm font-bold dark:text-white">
+                    {announcement.isActive ? 'Announcement is Active' : 'Announcement is Hidden'}
+                  </span>
+               </div>
+
+               <button 
+                  onClick={handleSaveAnnouncement}
+                  disabled={isSavingSettings}
+                  className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 transition-colors"
+               >
+                  {isSavingSettings ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                  Save Settings
+               </button>
+             </div>
            </div>
         )}
       </div>

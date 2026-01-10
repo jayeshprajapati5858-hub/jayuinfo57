@@ -21,12 +21,14 @@ import {
 } from 'firebase/storage';
 import { signInAnonymously } from 'firebase/auth';
 import { db, storage, auth } from './firebase';
-import { Product, Order, User, Coupon, Review } from '../types';
+import { Product, Order, User, Coupon, Review, Announcement } from '../types';
 
 const USERS_COLLECTION = 'users';
 const PRODUCTS_COLLECTION = 'products';
 const ORDERS_COLLECTION = 'orders';
 const COUPONS_COLLECTION = 'coupons';
+const SETTINGS_COLLECTION = 'settings';
+const ANNOUNCEMENT_DOC_ID = 'global_announcement';
 
 // Helper to ensure user is authenticated before writing data
 const ensureAuth = async () => {
@@ -286,6 +288,33 @@ export const api = {
       await deleteDoc(doc(db, COUPONS_COLLECTION, code));
       return true;
     } catch (e) {
+      return false;
+    }
+  },
+
+  // --- ANNOUNCEMENT ---
+  getAnnouncement: async (): Promise<Announcement | null> => {
+    try {
+      const docRef = doc(db, SETTINGS_COLLECTION, ANNOUNCEMENT_DOC_ID);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data() as Announcement;
+      }
+      return null;
+    } catch (e) {
+      console.error("Error fetching announcement", e);
+      return null;
+    }
+  },
+
+  updateAnnouncement: async (announcement: Announcement): Promise<boolean> => {
+    await ensureAuth();
+    try {
+      const docRef = doc(db, SETTINGS_COLLECTION, ANNOUNCEMENT_DOC_ID);
+      await setDoc(docRef, announcement);
+      return true;
+    } catch (e) {
+      console.error("Error updating announcement", e);
       return false;
     }
   }

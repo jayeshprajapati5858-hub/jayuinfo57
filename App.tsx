@@ -21,8 +21,9 @@ import SkeletonProduct from './components/SkeletonProduct';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
 import LegalPage from './components/LegalPage';
 import ContactPage from './components/ContactPage';
+import AnnouncementBar from './components/AnnouncementBar';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
-import { Product, CartItem, Category, Order, Coupon, Review, User } from './types';
+import { Product, CartItem, Category, Order, Coupon, Review, User, Announcement } from './types';
 import { Package, Zap, Shield, Smartphone, Home, ShoppingBag } from 'lucide-react';
 import { api } from './services/api';
 import { signOut } from 'firebase/auth';
@@ -65,6 +66,12 @@ const App: React.FC = () => {
   const [sortBy] = useState<'price_asc' | 'price_desc' | 'rating'>('rating');
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
+  
+  // Default state is ACTIVE to ensure visibility immediately
+  const [announcement, setAnnouncement] = useState<Announcement>({ 
+    message: '🎉 Welcome to MobileHub! Get 50% OFF on First Order', 
+    isActive: true 
+  });
   
   // New state to handle flow redirection after login
   const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
@@ -132,6 +139,23 @@ const App: React.FC = () => {
       const dbCoupons = await api.getCoupons();
       if (dbCoupons && dbCoupons.length > 0) setCoupons(dbCoupons);
       
+      // Initialize Announcement
+      const dbAnnouncement = await api.getAnnouncement();
+      if (dbAnnouncement && dbAnnouncement.message) {
+         // If announcement exists in DB, use it
+         // Fix: If it was disabled by mistake during dev, we might want to override, 
+         // but respecting DB is standard. However, if user says "not showing", we ensure local state is valid.
+         setAnnouncement(dbAnnouncement);
+      } else {
+        // If no announcement exists in DB (or message is empty), create default and FORCE SHOW
+        const defaultAnnouncement = { 
+          message: '🎉 Welcome to MobileHub! Sale is Live!', 
+          isActive: true 
+        };
+        await api.updateAnnouncement(defaultAnnouncement);
+        setAnnouncement(defaultAnnouncement);
+      }
+
       const isHealthy = await api.checkHealth();
       setServerStatus(isHealthy ? 'online' : 'offline');
 
@@ -388,6 +412,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] transition-colors duration-300 pb-20 md:pb-0 text-gray-900 dark:text-gray-100">
       
+      <AnnouncementBar message={announcement.message} isVisible={announcement.isActive} />
+
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 

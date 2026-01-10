@@ -74,3 +74,8 @@ export interface Coupon {
   discountPercent: number;
   isActive: boolean;
 }
+
+export interface Announcement {
+  message: string;
+  isActive: boolean;
+}
