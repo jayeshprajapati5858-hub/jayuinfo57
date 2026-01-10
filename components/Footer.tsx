@@ -46,7 +46,12 @@ const Footer: React.FC = () => {
               <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-primary hover:text-white transition-all">
                 <Twitter size={18} />
               </a>
-              <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-primary hover:text-white transition-all">
+              <a 
+                href="https://www.instagram.com/mobileshophome/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 bg-gray-800 rounded-full hover:bg-primary hover:text-white transition-all"
+              >
                 <Instagram size={18} />
               </a>
             </div>
