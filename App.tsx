@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProductCard from './components/ProductCard';
 import CartSidebar from './components/CartSidebar';
@@ -18,10 +19,11 @@ import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
-import LegalModal from './components/LegalModal';
+import LegalPage from './components/LegalPage';
+import ContactPage from './components/ContactPage';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, User } from './types';
-import { Home, ShoppingBag, Package, AlertTriangle, Zap, Shield, Smartphone } from 'lucide-react';
+import { Package, Zap, Shield, Smartphone, Home, ShoppingBag } from 'lucide-react';
 import { api } from './services/api';
 import { signOut } from 'firebase/auth';
 import { auth } from './services/firebase';
@@ -66,11 +68,10 @@ const App: React.FC = () => {
   
   // New state to handle flow redirection after login
   const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
-  
-  // State for legal pages (AdSense requirement)
-  const [activeLegalPage, setActiveLegalPage] = useState<'privacy' | 'terms' | 'about' | null>(null);
 
   const t = TRANSLATIONS['en'];
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Dark Mode Persistence
   useEffect(() => {
@@ -91,22 +92,19 @@ const App: React.FC = () => {
   // Admin secret path
   useEffect(() => {
     const checkSecretPath = () => {
-      const path = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-      const search = window.location.search.toLowerCase();
-      
-      if (
-        path.endsWith('/adminjayu') || 
-        hash === '#adminjayu' || 
-        search.includes('adminjayu')
-      ) {
+      // Use location from react-router
+      const path = location.pathname.toLowerCase();
+      if (path.endsWith('/adminjayu')) {
         setIsAdminLoginOpen(true);
       }
     };
     checkSecretPath();
-    window.addEventListener('hashchange', checkSecretPath);
-    return () => window.removeEventListener('hashchange', checkSecretPath);
-  }, []);
+  }, [location]);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   const showToast = (message: string) => { setToastMessage(message); setIsToastVisible(true); };
 
@@ -151,20 +149,16 @@ const App: React.FC = () => {
   }, []);
 
   const addToCart = (product: Product, silent = false) => {
-    // IMPORTANT: If product has multiple colors but no color is selected yet, OPEN MODAL
     const hasColorOptions = product.colors && product.colors.length > 0;
-    const isColorSelected = (product as any).selectedColor; // Cast to access custom prop if exists
+    const isColorSelected = (product as any).selectedColor; 
 
     if (hasColorOptions && !isColorSelected) {
-      setSelectedProduct(product); // Open modal to select color
+      setSelectedProduct(product); 
       return;
     }
 
     setCart(prev => {
-      // Logic modified to treat products with different colors as different cart items
-      // Use the selected color, or default to first one if forced (though modal prevents this now)
       const colorToAdd = isColorSelected || (hasColorOptions ? product.colors[0] : undefined);
-      
       const existing = prev.find(item => item.id === product.id && item.selectedColor === colorToAdd);
       
       if (existing) {
@@ -176,13 +170,10 @@ const App: React.FC = () => {
   };
 
   const buyNow = (product: Product) => {
-    // Open product modal to select color first instead of direct add
     setSelectedProduct(product);
   };
 
   const handleModalBuyNow = (product: Product) => {
-      // Add specific product (with color) to cart
-      // We pass 'true' to silent so we don't get double toast
       setCart(prev => {
         const colorToAdd = (product as any).selectedColor;
         const existing = prev.find(item => item.id === product.id && item.selectedColor === colorToAdd);
@@ -192,7 +183,6 @@ const App: React.FC = () => {
         return [...prev, { ...product, quantity: 1, selectedColor: colorToAdd }];
       });
       
-      // Immediately open checkout check
       if (currentUser) {
         setIsCheckoutOpen(true);
       } else {
@@ -208,7 +198,6 @@ const App: React.FC = () => {
       showToast('Logged out successfully');
     } catch (error) {
       console.error("Logout Error:", error);
-      // Even if Firebase logout fails, clear local state
       setCurrentUser(null);
     }
   };
@@ -228,20 +217,16 @@ const App: React.FC = () => {
     }
   };
 
-  // Updated Login to verify via Phone/OTP inside modal and just set user here
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     showToast(`Welcome back, ${user.name}!`);
-    
-    // Resume pending action if any
     if (pendingAction === 'checkout') {
       setIsCheckoutOpen(true);
       setPendingAction(null);
     }
   };
 
-  // --- Admin Handlers (Persist to Firebase) ---
-  
+  // --- Admin Handlers ---
   const handleAddProduct = async (product: Product) => {
     showToast('Uploading product...');
     const savedProduct = await api.addProduct(product);
@@ -309,7 +294,6 @@ const App: React.FC = () => {
     api.createOrder(newOrder).then((saved) => {
       if (saved) {
         setOrders(prev => [...prev, saved]);
-        // Update stock locally for UI immediate feedback
         newOrder.items.forEach(item => {
            handleUpdateStock(item.id, Math.max(0, item.stock - item.quantity));
         });
@@ -324,6 +308,62 @@ const App: React.FC = () => {
     .filter(p => selectedCategory === 'All' || p.category === selectedCategory)
     .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
+
+  // Home Page Component to keep routes clean
+  const HomePage = () => (
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <HeroSection 
+        onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
+        language={'en'}
+      />
+      
+      {/* Category Shortcuts */}
+      <div className="grid grid-cols-3 gap-3 mb-8 animate-fadeInUp stagger-1">
+            <button onClick={() => setSelectedCategory(Category.CHARGER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.CHARGER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                <Zap size={24} className={selectedCategory === Category.CHARGER ? 'text-yellow-300 fill-yellow-300' : 'text-primary'} />
+                <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.CHARGER]}</span>
+            </button>
+            <button onClick={() => setSelectedCategory(Category.GLASS)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.GLASS ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                <Shield size={24} className={selectedCategory === Category.GLASS ? 'text-white' : 'text-blue-500'} />
+                <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.GLASS]}</span>
+            </button>
+            <button onClick={() => setSelectedCategory(Category.COVER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.COVER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
+                <Smartphone size={24} className={selectedCategory === Category.COVER ? 'text-white' : 'text-purple-500'} />
+                <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.COVER]}</span>
+            </button>
+      </div>
+
+      <div className="mb-6 flex justify-between items-center">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
+          {selectedCategory !== 'All' && (
+              <button onClick={() => setSelectedCategory('All')} className="text-xs font-bold text-primary hover:underline">
+                  View All
+              </button>
+          )}
+      </div>
+
+      <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
+        {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.length > 0 ? filteredProducts.map(product => (
+          <ProductCard 
+            key={product.id} 
+            product={product} 
+            isWishlisted={wishlist.includes(product.id)} 
+            onAddToCart={(p) => addToCart(p)} 
+            onBuyNow={(p) => buyNow(p)}
+            onViewDetails={setSelectedProduct} 
+            onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
+            language={'en'}
+          />
+        )) : (
+          <div className="col-span-full py-12 text-center text-gray-400 flex flex-col items-center">
+              <Package size={48} className="mb-4 opacity-20" />
+              <p>No products found in this category.</p>
+              <button onClick={() => setSelectedCategory('All')} className="mt-4 text-primary font-bold">View All Products</button>
+          </div>
+        )}
+      </div>
+    </main>
+  );
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] transition-colors duration-300 pb-20 md:pb-0 text-gray-900 dark:text-gray-100">
@@ -344,62 +384,18 @@ const App: React.FC = () => {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <HeroSection 
-          onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
-          language={'en'}
-        />
-        
-        {/* Category Shortcuts - New Feature */}
-        <div className="grid grid-cols-3 gap-3 mb-8 animate-fadeInUp stagger-1">
-             <button onClick={() => setSelectedCategory(Category.CHARGER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.CHARGER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
-                 <Zap size={24} className={selectedCategory === Category.CHARGER ? 'text-yellow-300 fill-yellow-300' : 'text-primary'} />
-                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.CHARGER]}</span>
-             </button>
-             <button onClick={() => setSelectedCategory(Category.GLASS)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.GLASS ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
-                 <Shield size={24} className={selectedCategory === Category.GLASS ? 'text-white' : 'text-blue-500'} />
-                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.GLASS]}</span>
-             </button>
-             <button onClick={() => setSelectedCategory(Category.COVER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.COVER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
-                 <Smartphone size={24} className={selectedCategory === Category.COVER ? 'text-white' : 'text-purple-500'} />
-                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.COVER]}</span>
-             </button>
-        </div>
-
-        <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
-            {selectedCategory !== 'All' && (
-                <button onClick={() => setSelectedCategory('All')} className="text-xs font-bold text-primary hover:underline">
-                    View All
-                </button>
-            )}
-        </div>
-
-        <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
-          {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.length > 0 ? filteredProducts.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              isWishlisted={wishlist.includes(product.id)} 
-              onAddToCart={(p) => addToCart(p)} 
-              onBuyNow={(p) => buyNow(p)}
-              onViewDetails={setSelectedProduct} 
-              onToggleWishlist={(id) => setWishlist(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])} 
-              language={'en'}
-            />
-          )) : (
-            <div className="col-span-full py-12 text-center text-gray-400 flex flex-col items-center">
-                <Package size={48} className="mb-4 opacity-20" />
-                <p>No products found in this category.</p>
-                <button onClick={() => setSelectedCategory('All')} className="mt-4 text-primary font-bold">View All Products</button>
-            </div>
-          )}
-        </div>
-      </main>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<LegalPage type="about" />} />
+        <Route path="/privacy" element={<LegalPage type="privacy" />} />
+        <Route path="/terms" element={<LegalPage type="terms" />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Mobile Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
-          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
+          <button onClick={() => navigate('/')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Home size={20} />
             <span className="text-[8px] font-bold uppercase">Home</span>
           </button>
@@ -418,15 +414,15 @@ const App: React.FC = () => {
           </button>
       </div>
 
-      <Footer onOpenLegal={(page) => setActiveLegalPage(page)} />
+      <Footer />
 
       <UserAuthModal 
         isOpen={isAuthOpen} 
         onClose={() => { setIsAuthOpen(false); setPendingAction(null); }} 
         onLogin={handleLogin}
         onSignup={handleSignup}
-        users={users} // Pass users to check if phone exists
-        onResetPassword={async () => true} // No longer used for phone, but required by type
+        users={users} 
+        onResetPassword={async () => true} 
       />
       <AuthenticityVerifier isOpen={isVerifierOpen} onClose={() => setIsVerifierOpen(false)} language={'en'} />
       <CartSidebar 
@@ -473,12 +469,6 @@ const App: React.FC = () => {
       
       <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
       
-      <LegalModal 
-        isOpen={!!activeLegalPage} 
-        type={activeLegalPage} 
-        onClose={() => setActiveLegalPage(null)} 
-      />
-
       {isAdminDashboardOpen && (
         <AdminDashboard 
           orders={orders} 

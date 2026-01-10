@@ -1,12 +1,18 @@
 
 import React from 'react';
 import { Smartphone, Facebook, Twitter, Instagram, Mail, MapPin, Phone } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
-interface FooterProps {
-  onOpenLegal: (page: 'privacy' | 'terms' | 'about') => void;
-}
+const Footer: React.FC = () => {
+  const navigate = useNavigate();
 
-const Footer: React.FC<FooterProps> = ({ onOpenLegal }) => {
+  const handleScrollToProducts = () => {
+    navigate('/');
+    setTimeout(() => {
+        document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   return (
     <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,11 +48,12 @@ const Footer: React.FC<FooterProps> = ({ onOpenLegal }) => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-6">Quick Links</h3>
             <ul className="space-y-4 text-sm">
-              <li><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-primary transition-colors text-left">Home</button></li>
-              <li><button onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors text-left">All Products</button></li>
-              <li><button onClick={() => onOpenLegal('about')} className="hover:text-primary transition-colors text-left">About Us</button></li>
-              <li><button onClick={() => onOpenLegal('terms')} className="hover:text-primary transition-colors text-left">Terms & Conditions</button></li>
-              <li><button onClick={() => onOpenLegal('privacy')} className="hover:text-primary transition-colors text-left">Privacy Policy</button></li>
+              <li><Link to="/" className="hover:text-primary transition-colors text-left">Home</Link></li>
+              <li><button onClick={handleScrollToProducts} className="hover:text-primary transition-colors text-left">All Products</button></li>
+              <li><Link to="/about" className="hover:text-primary transition-colors text-left">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-primary transition-colors text-left">Contact Us</Link></li>
+              <li><Link to="/terms" className="hover:text-primary transition-colors text-left">Terms & Conditions</Link></li>
+              <li><Link to="/privacy" className="hover:text-primary transition-colors text-left">Privacy Policy</Link></li>
             </ul>
           </div>
 
