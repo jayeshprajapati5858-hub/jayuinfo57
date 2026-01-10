@@ -2,7 +2,11 @@
 import React from 'react';
 import { Smartphone, Facebook, Twitter, Instagram, Mail, MapPin, Phone } from 'lucide-react';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenLegal: (page: 'privacy' | 'terms' | 'about') => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onOpenLegal }) => {
   return (
     <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,11 +42,11 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-6">Quick Links</h3>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">Home</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">All Products</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Track Order</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms & Conditions</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-primary transition-colors text-left">Home</button></li>
+              <li><button onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors text-left">All Products</button></li>
+              <li><button onClick={() => onOpenLegal('about')} className="hover:text-primary transition-colors text-left">About Us</button></li>
+              <li><button onClick={() => onOpenLegal('terms')} className="hover:text-primary transition-colors text-left">Terms & Conditions</button></li>
+              <li><button onClick={() => onOpenLegal('privacy')} className="hover:text-primary transition-colors text-left">Privacy Policy</button></li>
             </ul>
           </div>
 
@@ -50,11 +54,11 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-white font-semibold text-lg mb-6">Categories</h3>
             <ul className="space-y-4 text-sm">
-              <li><a href="#" className="hover:text-primary transition-colors">Chargers & Adapters</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Mobile Covers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Screen Guards</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Audio & Headphones</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Data Cables</a></li>
+              <li><span className="text-gray-400 cursor-default">Chargers & Adapters</span></li>
+              <li><span className="text-gray-400 cursor-default">Mobile Covers</span></li>
+              <li><span className="text-gray-400 cursor-default">Screen Guards</span></li>
+              <li><span className="text-gray-400 cursor-default">Audio & Headphones</span></li>
+              <li><span className="text-gray-400 cursor-default">Data Cables</span></li>
             </ul>
           </div>
 

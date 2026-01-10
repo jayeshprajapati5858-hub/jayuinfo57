@@ -18,6 +18,7 @@ import LiveSalesNotification from './components/LiveSalesNotification';
 import WhatsAppButton from './components/WhatsAppButton';
 import SkeletonProduct from './components/SkeletonProduct';
 import AuthenticityVerifier from './components/AuthenticityVerifier';
+import LegalModal from './components/LegalModal';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, User } from './types';
 import { Home, ShoppingBag, Package, AlertTriangle, Zap, Shield, Smartphone } from 'lucide-react';
@@ -65,6 +66,9 @@ const App: React.FC = () => {
   
   // New state to handle flow redirection after login
   const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
+  
+  // State for legal pages (AdSense requirement)
+  const [activeLegalPage, setActiveLegalPage] = useState<'privacy' | 'terms' | 'about' | null>(null);
 
   const t = TRANSLATIONS['en'];
 
@@ -414,7 +418,7 @@ const App: React.FC = () => {
           </button>
       </div>
 
-      <Footer />
+      <Footer onOpenLegal={(page) => setActiveLegalPage(page)} />
 
       <UserAuthModal 
         isOpen={isAuthOpen} 
@@ -469,6 +473,12 @@ const App: React.FC = () => {
       
       <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
       
+      <LegalModal 
+        isOpen={!!activeLegalPage} 
+        type={activeLegalPage} 
+        onClose={() => setActiveLegalPage(null)} 
+      />
+
       {isAdminDashboardOpen && (
         <AdminDashboard 
           orders={orders} 

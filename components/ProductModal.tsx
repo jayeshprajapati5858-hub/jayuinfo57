@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Review } from '../types';
-import { X, Star, ShoppingCart, RotateCcw, Zap, ArrowRight } from 'lucide-react';
+import { X, Star, ShoppingCart, RotateCcw, Zap, ArrowRight, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
 interface ProductModalProps {
@@ -9,7 +9,7 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (product: Product) => void;
-  onBuyNow: (product: Product) => void; // Added Buy Now handler
+  onBuyNow: (product: Product) => void; 
   onAddReview: (productId: string, review: Review) => void;
   language?: any;
 }
@@ -23,13 +23,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
     if (product) {
         // Default to first available color and main image
         setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0] : 'Default');
-        setActiveImage(product.image);
+        setActiveImage(product.images && product.images.length > 0 ? product.images[0] : product.image);
     }
   }, [product, isOpen]);
 
   if (!isOpen || !product) return null;
 
   const isOutOfStock = product.stock === 0;
+  const hasMultipleImages = product.images && product.images.length > 1;
 
   const handleAddToCart = () => {
       onAddToCart({ ...product, selectedColor: selectedColor }); 
@@ -41,29 +42,69 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
       onClose();
   };
 
+  const nextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!hasMultipleImages) return;
+    const currentIndex = product.images.indexOf(activeImage);
+    const nextIndex = (currentIndex + 1) % product.images.length;
+    setActiveImage(product.images[nextIndex]);
+  };
+
+  const prevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!hasMultipleImages) return;
+    const currentIndex = product.images.indexOf(activeImage);
+    const prevIndex = (currentIndex - 1 + product.images.length) % product.images.length;
+    setActiveImage(product.images[prevIndex]);
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
       <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors z-10 text-gray-500 dark:text-gray-400">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors z-20 text-gray-500 dark:text-gray-400">
           <X size={20} />
         </button>
 
         <div className="flex flex-col md:flex-row h-full overflow-hidden">
           {/* Image Section */}
-          <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 p-8 flex flex-col items-center justify-center overflow-hidden">
+          <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-800 p-8 flex flex-col items-center justify-center overflow-hidden relative group">
+            
+            {/* Slider Controls */}
+            {hasMultipleImages && (
+                <>
+                    <button 
+                        onClick={prevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 dark:bg-gray-900/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-900 transition-all z-10 text-gray-800 dark:text-white opacity-0 group-hover:opacity-100"
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                    <button 
+                        onClick={nextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 dark:bg-gray-900/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-900 transition-all z-10 text-gray-800 dark:text-white opacity-0 group-hover:opacity-100"
+                    >
+                        <ChevronRight size={24} />
+                    </button>
+                </>
+            )}
+
             <div className="flex-1 flex items-center justify-center w-full">
-                <img src={activeImage} alt={product.name} className={`w-full max-w-sm object-contain mix-blend-multiply dark:mix-blend-normal hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-75' : ''}`} />
+                <img 
+                    src={activeImage} 
+                    alt={product.name} 
+                    className={`w-full max-w-sm object-contain mix-blend-multiply dark:mix-blend-normal transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-75' : ''}`} 
+                />
             </div>
+            
             {/* Gallery */}
-            {product.images && product.images.length > 1 && (
-                <div className="flex gap-2 mt-4 overflow-x-auto w-full px-2 justify-center">
+            {hasMultipleImages && (
+                <div className="flex gap-2 mt-4 overflow-x-auto w-full px-2 justify-center z-10">
                     {product.images.map((img, idx) => (
                         <button 
                             key={idx} 
                             onClick={() => setActiveImage(img)}
-                            className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 ${activeImage === img ? 'border-primary' : 'border-transparent'}`}
+                            className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all ${activeImage === img ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                         >
                             <img src={img} className="w-full h-full object-cover" />
                         </button>
@@ -83,8 +124,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
                 </div>
               </div>
 
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{product.name}</h2>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white mb-6">₹{product.price.toLocaleString()}</div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.name}</h2>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">₹{product.price.toLocaleString()}</div>
+
+              {/* Description Display */}
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
 
               {/* Color Selection */}
               {product.colors && product.colors.length > 0 && (
@@ -186,3 +234,4 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, isOpen, onClose, o
 };
 
 export default ProductModal;
+    
