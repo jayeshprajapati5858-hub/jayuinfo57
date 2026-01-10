@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Smartphone, Search, Package, Heart, Sun, Moon, User as UserIcon, LogOut, Zap, ShieldCheck, Menu, X, Lock } from 'lucide-react';
 import { User } from '../types';
 import { TRANSLATIONS } from '../constants';
@@ -37,6 +38,12 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const t = TRANSLATIONS['en'];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
@@ -44,7 +51,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-20">
           
           {/* Logo Section */}
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
             <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-500/20 text-white transform group-hover:scale-105 transition-transform duration-300">
               <Smartphone size={24} className="relative z-10 drop-shadow-md" />
               <Zap size={14} className="absolute top-1.5 right-1.5 text-yellow-300 fill-yellow-300 animate-pulse drop-shadow-sm" />

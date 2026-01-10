@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -75,12 +76,15 @@
       body {
         font-family: 'Inter', sans-serif;
         -webkit-tap-highlight-color: transparent;
+        background-color: #f8fafc; /* Pre-set light mode bg to avoid flash */
+      }
+      .dark body {
+        background-color: #030712;
       }
       
-      body, div, nav, aside, footer, main {
-        transition-property: background-color, border-color, color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 300ms;
+      /* Removed global transition on div, nav, etc. to stop flickering */
+      body {
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
 
       ::-webkit-scrollbar { width: 4px; }
