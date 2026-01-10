@@ -30,24 +30,19 @@ const COUPONS_COLLECTION = 'coupons';
 const SETTINGS_COLLECTION = 'settings';
 const ANNOUNCEMENT_DOC_ID = 'global_announcement';
 
-// Helper to ensure user is authenticated before writing data
 const ensureAuth = async () => {
   if (auth.currentUser) return;
-  
   try {
     await signInAnonymously(auth);
     console.log("Signed in anonymously for database access");
   } catch (error: any) {
     console.error("Auth Error:", error);
-    // Continue even if auth fails, as rules might be public
   }
 };
 
-// Helper for timeout
 const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
 
 export const api = {
-  // Check connection to Firestore
   checkHealth: async () => {
     try {
       await ensureAuth();
@@ -61,7 +56,6 @@ export const api = {
     }
   },
 
-  // --- DATABASE SEEDING ---
   seedProducts: async (products: Product[]): Promise<boolean> => {
     await ensureAuth();
     console.log("Attempting to seed database...");
@@ -80,7 +74,6 @@ export const api = {
     }
   },
 
-  // --- USERS ---
   getUsers: async (): Promise<User[]> => {
     try {
       const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
@@ -104,7 +97,36 @@ export const api = {
     }
   },
 
-  // --- PRODUCTS ---
+  // NEW: Update User Profile
+  updateUser: async (user: User): Promise<boolean> => {
+    await ensureAuth();
+    try {
+      // Logic to find user doc by ID stored in user object
+      // Note: If ID from props matches doc ID. 
+      // If the user ID from auth is used as doc ID, utilize that.
+      // Here we assume we might need to query if ID isn't the key, but simpler is assuming ID is key or we query.
+      // For simplicity in this mock-up structure:
+      
+      const q = query(collection(db, USERS_COLLECTION));
+      const snapshot = await getDocs(q);
+      const userDoc = snapshot.docs.find(d => d.data().id === user.id);
+      
+      if (userDoc) {
+        await updateDoc(doc(db, USERS_COLLECTION, userDoc.id), {
+             name: user.name,
+             email: user.email,
+             phoneNumber: user.phoneNumber,
+             addresses: user.addresses || []
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return false;
+    }
+  },
+
   getProducts: async (): Promise<Product[] | null> => {
     try {
       const q = query(collection(db, PRODUCTS_COLLECTION), orderBy('name')); 
@@ -119,73 +141,38 @@ export const api = {
 
   addProduct: async (product: Product): Promise<Product | null> => {
     await ensureAuth();
-    
     try {
-      // Logic for handling multiple images
       let uploadedImages: string[] = [];
-      
-      // If product has images array with Base64 strings, upload them
       if (product.images && product.images.length > 0) {
-        // Check if the first image is a data URL (new upload) or already a URL (existing/seeded)
         if (product.images[0].startsWith('data:image')) {
-            console.log("Uploading multiple images...");
-            
             const uploadPromises = product.images.map(async (imgBase64, index) => {
                 try {
                     const timestamp = Date.now();
                     const safeName = product.name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
                     const storageRef = ref(storage, `products/${timestamp}_${safeName}_${index}.jpg`);
-                    
                     await Promise.race([
                         uploadString(storageRef, imgBase64, 'data_url'),
-                        timeout(10000) // 10 second timeout for multiple
+                        timeout(10000)
                     ]);
                     return await getDownloadURL(storageRef);
                 } catch (e) {
-                    console.error("Failed to upload image index " + index, e);
-                    // Fallback to base64 if upload fails, though ideally we want URL
                     return imgBase64.length < 500000 ? imgBase64 : "https://via.placeholder.com/400?text=UploadFailed"; 
                 }
             });
-
             uploadedImages = await Promise.all(uploadPromises);
         } else {
-            // Already URLs
             uploadedImages = product.images;
         }
       } else {
-          // Fallback placeholder
            uploadedImages = ["https://images.unsplash.com/photo-1512054502232-10a0a035d672?auto=format&fit=crop&w=800&q=80"];
       }
-
-      // Ensure main image is set
       const mainImage = uploadedImages[0];
-
-      const productToSave = { 
-          ...product, 
-          image: mainImage,
-          images: uploadedImages 
-      };
-      
-      // Save to Firestore
+      const productToSave = { ...product, image: mainImage, images: uploadedImages };
       const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
       await setDoc(docRef, productToSave);
-      
       return productToSave;
-
     } catch (error: any) {
-      console.error("Detailed Error adding product:", error);
-      
-      let msg = "Failed to add product. ";
-      if (error.code === 'permission-denied') {
-        msg += "PERMISSION DENIED: Go to Firebase Console -> Firestore Database -> Rules. Change 'allow read, write: if false;' to 'allow read, write: if true;'";
-      } else if (error.code === 'unavailable') {
-        msg += "Network Error. Please check your internet.";
-      } else {
-        msg += error.message;
-      }
-      alert(msg);
-      
+      console.error("Error adding product:", error);
       return null;
     }
   },
@@ -227,7 +214,6 @@ export const api = {
     }
   },
 
-  // --- ORDERS ---
   getOrders: async (): Promise<Order[]> => {
     try {
       const q = query(collection(db, ORDERS_COLLECTION), orderBy('date', 'desc'));
@@ -262,7 +248,6 @@ export const api = {
     }
   },
 
-  // --- COUPONS ---
   getCoupons: async (): Promise<Coupon[]> => {
     try {
       const snapshot = await getDocs(collection(db, COUPONS_COLLECTION));
@@ -292,7 +277,6 @@ export const api = {
     }
   },
 
-  // --- ANNOUNCEMENT ---
   getAnnouncement: async (): Promise<Announcement | null> => {
     try {
       const docRef = doc(db, SETTINGS_COLLECTION, ANNOUNCEMENT_DOC_ID);

@@ -7,15 +7,24 @@ export enum Category {
   CABLE = 'Cables'
 }
 
-export type Language = 'en' | 'gu'; // Added 'gu' for Gujarati
+export type Language = 'en' | 'gu';
+
+export interface Address {
+  id: string;
+  label: string; // e.g., "Home", "Office"
+  details: string; // Full address string
+  city: string;
+  zip: string;
+}
 
 export interface User {
   id: string;
   name: string;
-  email?: string; // Made optional
-  phoneNumber?: string; // Added for OTP login
-  password?: string; // Made optional
+  email?: string;
+  phoneNumber?: string;
+  password?: string;
   joinDate: string;
+  addresses?: Address[]; // Added address book
 }
 
 export interface Review {
@@ -33,9 +42,9 @@ export interface Product {
   description: string;
   price: number;
   category: Category;
-  image: string; // Main thumbnail
-  images: string[]; // Gallery images
-  colors: string[]; // Available colors
+  image: string;
+  images: string[];
+  colors: string[];
   rating: number;
   stock: number;
   sales: number;
@@ -44,7 +53,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
-  selectedColor?: string; // Color chosen by user
+  selectedColor?: string;
 }
 
 export interface ChatMessage {
@@ -67,6 +76,8 @@ export interface Order {
   address: string;
   coinsEarned?: number;
   verificationCode?: string;
+  paymentMethod?: 'COD' | 'UPI'; // Added payment method
+  paymentStatus?: 'Pending' | 'Paid'; // Added payment status
 }
 
 export interface Coupon {

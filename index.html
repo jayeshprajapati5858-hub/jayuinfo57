@@ -8,20 +8,21 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-4NCVSKQD0X');
     </script>
-
-    <!-- Google AdSense (Commented out: Invalid Publisher ID causes Script Error) -->
-    <!-- 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID_HERE"
-     crossorigin="anonymous"></script> 
-    -->
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="google-site-verification" content="7ALlnKHITDQsShSyuEJvlljvMc-d0JcIQ358VTyaojQ" />
     <meta name="description" content="MobileHub - Buy high-quality mobile chargers, glass screen guards, and covers. Premium accessories with fast delivery across India." />
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/644/644458.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
     <meta property="og:title" content="MobileHub - Chargers, Glass & Covers" />
     <meta property="og:description" content="Discover premium mobile accessories including chargers, glass covers, and screen guards. Fast delivery across India." />
     <meta property="og:type" content="website" />
@@ -29,124 +30,55 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script>
-      // Polyfill process for browser environments to prevent ReferenceError in libraries
       window.process = { env: { NODE_ENV: 'production' } };
-
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            colors: {
-              primary: '#2563eb', 
-              secondary: '#4f46e5',
-              accent: '#f59e0b',
-            },
-            animation: {
-              'float': 'float 3s ease-in-out infinite',
-              'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
-              'fadeInUp': 'fadeInUp 0.8s ease-out forwards',
-              'shimmer': 'shimmer 2.5s infinite linear',
-            },
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            colors: { primary: '#2563eb', secondary: '#4f46e5', accent: '#f59e0b' },
+            animation: { 'float': 'float 3s ease-in-out infinite', 'pulse-soft': 'pulse-soft 2s ease-in-out infinite', 'fadeInUp': 'fadeInUp 0.8s ease-out forwards', 'shimmer': 'shimmer 2.5s infinite linear' },
             keyframes: {
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-10px)' },
-              },
-              'pulse-soft': {
-                '0%, 100%': { transform: 'scale(1)', opacity: '1' },
-                '50%': { transform: 'scale(1.05)', opacity: '0.9' },
-              },
-              fadeInUp: {
-                'from': { opacity: '0', transform: 'translateY(20px)' },
-                'to': { opacity: '1', transform: 'translateY(0)' },
-              },
-              shimmer: {
-                '0%': { backgroundPosition: '-200% 0' },
-                '100%': { backgroundPosition: '200% 0' },
-              }
+              float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+              'pulse-soft': { '0%, 100%': { transform: 'scale(1)', opacity: '1' }, '50%': { transform: 'scale(1.05)', opacity: '0.9' } },
+              fadeInUp: { 'from': { opacity: '0', transform: 'translateY(20px)' }, 'to': { opacity: '1', transform: 'translateY(0)' } },
+              shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } }
             }
           }
         }
       }
     </script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        -webkit-tap-highlight-color: transparent;
-        background-color: #f8fafc; /* Pre-set light mode bg to avoid flash */
-      }
-      .dark body {
-        background-color: #030712;
-      }
-      
-      /* Removed global transition on div, nav, etc. to stop flickering */
-      body {
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
-
+      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; transition: background-color 0.3s ease, color 0.3s ease; }
+      .dark body { background-color: #030712; }
       ::-webkit-scrollbar { width: 4px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       .dark ::-webkit-scrollbar-thumb { background: #475569; }
-
-      .loading-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: #ffffff;
-      }
-      .dark .loading-container {
-        background: #030712;
-      }
-      .loader-logo {
-        width: 80px;
-        height: 80px;
-        background: #2563eb;
-        border-radius: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 40px;
-        font-weight: 900;
-        margin-bottom: 24px;
-        animation: pulse 1.5s infinite ease-in-out;
-      }
-      @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-        70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-      }
-
-      .animate-fadeInUp {
-        opacity: 0;
-        animation: fadeInUp 0.8s ease-out forwards;
-      }
-      
+      .loading-container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #ffffff; }
+      .dark .loading-container { background: #030712; }
+      .loader-logo { width: 80px; height: 80px; background: #2563eb; border-radius: 24px; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: 900; margin-bottom: 24px; animation: pulse 1.5s infinite ease-in-out; }
+      @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+      .animate-fadeInUp { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
       .stagger-1 { animation-delay: 0.1s; }
       .stagger-2 { animation-delay: 0.2s; }
       .stagger-3 { animation-delay: 0.3s; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "firebase/": "https://esm.sh/firebase@^12.7.0/"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+        "vite": "https://esm.sh/vite@^7.3.1",
+        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "firebase/": "https://esm.sh/firebase@^12.7.0/"
+      }
+    }
+    </script>
 </head>
   <body>
     <div id="root">
@@ -156,5 +88,16 @@
       </div>
     </div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('SW registered: ', reg);
+          }).catch(err => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

@@ -23,6 +23,7 @@ import LegalPage from './components/LegalPage';
 import ContactPage from './components/ContactPage';
 import AnnouncementBar from './components/AnnouncementBar';
 import FeaturesSection from './components/FeaturesSection';
+import UserProfile from './components/UserProfile';
 import { INITIAL_COUPONS, PRODUCTS as DEFAULT_PRODUCTS, TRANSLATIONS } from './constants';
 import { Product, CartItem, Category, Order, Coupon, Review, User, Announcement, Language } from './types';
 import { Package, Zap, Shield, Smartphone, Home, ShoppingBag } from 'lucide-react';
@@ -74,20 +75,17 @@ const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [isToastVisible, setIsToastVisible] = useState(false);
   
-  // Default state is ACTIVE to ensure visibility immediately
   const [announcement, setAnnouncement] = useState<Announcement>({ 
     message: '🎉 Welcome to MobileHub! Get 50% OFF on First Order', 
     isActive: true 
   });
   
-  // New state to handle flow redirection after login
   const [pendingAction, setPendingAction] = useState<'checkout' | null>(null);
 
   const t = TRANSLATIONS[language];
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Dark Mode Persistence
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -98,7 +96,6 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  // Language Persistence
   useEffect(() => {
     localStorage.setItem('mh_lang', language);
   }, [language]);
@@ -112,10 +109,8 @@ const App: React.FC = () => {
     else localStorage.removeItem('mh_current_user');
   }, [currentUser]);
 
-  // Admin secret path
   useEffect(() => {
     const checkSecretPath = () => {
-      // Use location from react-router
       const path = location.pathname.toLowerCase();
       if (path.endsWith('/adminjayu')) {
         setIsAdminLoginOpen(true);
@@ -124,7 +119,6 @@ const App: React.FC = () => {
     checkSecretPath();
   }, [location]);
 
-  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
@@ -135,8 +129,6 @@ const App: React.FC = () => {
     setServerStatus('checking');
     try {
       const dbProducts = await api.getProducts();
-      
-      // Auto-Seed Database: If DB is empty, upload Default Products automatically
       if (!dbProducts || dbProducts.length === 0) {
         console.log("Database empty. Seeding with default data...");
         await api.seedProducts(DEFAULT_PRODUCTS);
@@ -155,7 +147,6 @@ const App: React.FC = () => {
       const dbCoupons = await api.getCoupons();
       if (dbCoupons && dbCoupons.length > 0) setCoupons(dbCoupons);
       
-      // Initialize Announcement
       const dbAnnouncement = await api.getAnnouncement();
       if (dbAnnouncement && dbAnnouncement.message) {
          setAnnouncement(dbAnnouncement);
@@ -173,7 +164,7 @@ const App: React.FC = () => {
 
     } catch (e) {
       console.error("Load failed", e);
-      setProducts(DEFAULT_PRODUCTS); // Fallback only on critical error
+      setProducts(DEFAULT_PRODUCTS);
       setServerStatus('offline');
     } finally {
       setIsLoading(false);
@@ -232,6 +223,7 @@ const App: React.FC = () => {
       await signOut(auth);
       setCurrentUser(null);
       showToast('Logged out successfully');
+      navigate('/');
     } catch (error) {
       console.error("Logout Error:", error);
       setCurrentUser(null);
@@ -262,7 +254,11 @@ const App: React.FC = () => {
     }
   };
 
-  // --- Admin Handlers ---
+  const handleUpdateUser = (updatedUser: User) => {
+      setCurrentUser(updatedUser);
+      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+  };
+
   const handleAddProduct = async (product: Product) => {
     showToast('Uploading product...');
     const savedProduct = await api.addProduct(product);
@@ -319,10 +315,8 @@ const App: React.FC = () => {
       setProducts(prev => prev.map(p => {
         if (p.id === productId) {
            const newReviews = [...p.reviews, review];
-           // Calculate new average rating
            const totalRating = newReviews.reduce((sum, r) => sum + r.rating, 0);
            const newRating = Number((totalRating / newReviews.length).toFixed(1));
-           
            return { ...p, reviews: newReviews, rating: newRating };
         }
         return p;
@@ -333,7 +327,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePlaceOrder = (details: { name: string; address: string; city: string }, discount: number, finalTotal: number) => {
+  const handlePlaceOrder = (details: { name: string; address: string; city: string }, discount: number, finalTotal: number, paymentMethod: 'COD' | 'UPI' = 'COD') => {
     const newOrder: Order = { 
         id: `ord-${Date.now()}`, 
         customerName: details.name, 
@@ -344,7 +338,9 @@ const App: React.FC = () => {
         finalTotal: finalTotal, 
         date: new Date().toISOString(), 
         status: 'Pending',
-        verificationCode: 'MH' + Math.floor(Math.random() * 900000 + 100000)
+        verificationCode: 'MH' + Math.floor(Math.random() * 900000 + 100000),
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'UPI' ? 'Paid' : 'Pending'
     };
 
     api.createOrder(newOrder).then((saved) => {
@@ -365,17 +361,13 @@ const App: React.FC = () => {
     .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => sortBy === 'price_asc' ? a.price - b.price : sortBy === 'price_desc' ? b.price - a.price : b.rating - a.rating);
 
-  // Home Page Component
   const HomePage = () => (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <HeroSection 
         onShopNow={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })} 
         language={language}
       />
-      
       <FeaturesSection language={language} />
-
-      {/* Category Shortcuts */}
       <div className="grid grid-cols-3 gap-3 mb-8 animate-fadeInUp stagger-1">
             <button onClick={() => setSelectedCategory(Category.CHARGER)} className={`p-4 rounded-2xl flex flex-col items-center gap-2 border transition-all ${selectedCategory === Category.CHARGER ? 'bg-primary text-white border-primary shadow-lg scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-primary/50'}`}>
                 <Zap size={24} className={selectedCategory === Category.CHARGER ? 'text-yellow-300 fill-yellow-300' : 'text-primary'} />
@@ -390,7 +382,6 @@ const App: React.FC = () => {
                 <span className="font-bold text-xs uppercase tracking-wide">{t.categories[Category.COVER]}</span>
             </button>
       </div>
-
       <div className="mb-6 flex justify-between items-center">
           <h2 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">{t.premium_collection}</h2>
           {selectedCategory !== 'All' && (
@@ -399,7 +390,6 @@ const App: React.FC = () => {
               </button>
           )}
       </div>
-
       <div id="products-grid" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
         {isLoading ? Array(6).fill(0).map((_, i) => <SkeletonProduct key={i} />) : filteredProducts.length > 0 ? filteredProducts.map(product => (
           <ProductCard 
@@ -425,9 +415,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] transition-colors duration-300 pb-20 md:pb-0 text-gray-900 dark:text-gray-100">
-      
       <AnnouncementBar message={announcement.message} isVisible={announcement.isActive} />
-
       <Navbar 
         cartItemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} 
         wishlistItemCount={wishlist.length} 
@@ -445,17 +433,15 @@ const App: React.FC = () => {
         language={language}
         onToggleLanguage={toggleLanguage}
       />
-
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<LegalPage type="about" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/profile" element={currentUser ? <UserProfile user={currentUser} onUpdateUser={handleUpdateUser} /> : <Navigate to="/" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      {/* Mobile Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 z-50 md:hidden flex justify-around items-center h-16 px-4">
           <button onClick={() => navigate('/')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-primary transition-colors">
             <Home size={20} />
@@ -475,9 +461,7 @@ const App: React.FC = () => {
             <span className="text-[8px] font-bold uppercase">Wishlist</span>
           </button>
       </div>
-
       <Footer />
-
       <UserAuthModal 
         isOpen={isAuthOpen} 
         onClose={() => { setIsAuthOpen(false); setPendingAction(null); }} 
@@ -509,10 +493,10 @@ const App: React.FC = () => {
       />
       <WishlistSidebar isOpen={isWishlistOpen} onClose={() => setIsWishlistOpen(false)} items={products.filter(p => wishlist.includes(p.id))} onRemoveItem={(id) => setWishlist(prev => prev.filter(i => i !== id))} onAddToCart={addToCart} />
       <OrderTracker isOpen={isOrderTrackerOpen} onClose={() => setIsOrderTrackerOpen(false)} orders={orders} />
-      
       <ProductModal 
         isOpen={!!selectedProduct} 
         product={selectedProduct} 
+        allProducts={products}
         onClose={() => setSelectedProduct(null)} 
         onAddToCart={addToCart} 
         onBuyNow={handleModalBuyNow}
@@ -520,7 +504,6 @@ const App: React.FC = () => {
         language={language} 
         currentUser={currentUser}
       />
-      
       <CheckoutModal 
         isOpen={isCheckoutOpen} 
         onClose={() => setIsCheckoutOpen(false)} 
@@ -529,9 +512,7 @@ const App: React.FC = () => {
         onPlaceOrder={handlePlaceOrder} 
         currentUser={currentUser}
       />
-      
       <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
-      
       {isAdminDashboardOpen && (
         <AdminDashboard 
           orders={orders} 
@@ -556,5 +537,4 @@ const App: React.FC = () => {
     </div>
   );
 };
-
 export default App;

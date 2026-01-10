@@ -107,11 +107,14 @@ const Navbar: React.FC<NavbarProps> = ({
 
              {currentUser ? (
                <div className="flex items-center gap-4">
-                 <div className="text-right hidden lg:block">
-                   <p className="text-xs font-bold text-gray-900 dark:text-white">{currentUser.name}</p>
+                 <div className="text-right hidden lg:block group relative">
+                   <p className="text-xs font-bold text-gray-900 dark:text-white cursor-pointer hover:text-primary" onClick={() => navigate('/profile')}>{currentUser.name}</p>
                    <p className="text-[10px] text-gray-500 cursor-pointer hover:text-primary" onClick={onLogout}>Logout</p>
                  </div>
-                 <div className="w-10 h-10 bg-gradient-to-tr from-primary to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
+                 <div 
+                   className="w-10 h-10 bg-gradient-to-tr from-primary to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 cursor-pointer"
+                   onClick={() => navigate('/profile')}
+                 >
                     {currentUser.name[0]}
                  </div>
                </div>
@@ -180,7 +183,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
               {currentUser ? (
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => { navigate('/profile'); setIsMenuOpen(false); }}>
                       <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
                          {currentUser.name[0]}
                       </div>
