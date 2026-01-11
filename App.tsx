@@ -112,7 +112,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkSecretPath = () => {
       const path = location.pathname.toLowerCase();
-      if (path.endsWith('/adminjayu')) {
+      // Check if path contains adminjayu (handling both /adminjayu and /#/adminjayu logic via router)
+      if (path.includes('adminjayu')) {
         setIsAdminLoginOpen(true);
       }
     };
@@ -436,6 +437,8 @@ const App: React.FC = () => {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        {/* ADDED: Explicit route for adminjayu so it renders HomePage under the modal instead of 404/redirect */}
+        <Route path="/adminjayu" element={<HomePage />} />
         <Route path="/about" element={<LegalPage type="about" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
