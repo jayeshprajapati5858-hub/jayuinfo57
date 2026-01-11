@@ -14,7 +14,6 @@ interface NavbarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onOrdersClick: () => void;
-  onAdminClick: () => void;
   onAuthClick: () => void;
   onLogout: () => void;
   darkMode: boolean;
@@ -32,7 +31,6 @@ const Navbar: React.FC<NavbarProps> = ({
   searchTerm, 
   onSearchChange, 
   onOrdersClick,
-  onAdminClick,
   onAuthClick,
   onLogout,
   darkMode,

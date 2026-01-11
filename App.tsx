@@ -63,7 +63,6 @@ const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isVerifierOpen, setIsVerifierOpen] = useState(false);
@@ -108,17 +107,6 @@ const App: React.FC = () => {
     if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
     else localStorage.removeItem('mh_current_user');
   }, [currentUser]);
-
-  useEffect(() => {
-    const checkSecretPath = () => {
-      const path = location.pathname.toLowerCase();
-      // Check if path contains adminjayu (handling both /adminjayu and /#/adminjayu logic via router)
-      if (path.includes('adminjayu')) {
-        setIsAdminLoginOpen(true);
-      }
-    };
-    checkSecretPath();
-  }, [location]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -427,7 +415,6 @@ const App: React.FC = () => {
         searchTerm={searchTerm} 
         onSearchChange={setSearchTerm} 
         onOrdersClick={() => setIsOrderTrackerOpen(true)} 
-        onAdminClick={() => setIsAdminLoginOpen(true)} 
         onAuthClick={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         darkMode={darkMode} 
@@ -438,7 +425,16 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         {/* ADDED: Explicit route for adminjayu so it renders HomePage under the modal instead of 404/redirect */}
-        <Route path="/adminjayu" element={<HomePage />} />
+        <Route path="/adminjayu" element={
+          <>
+            <HomePage />
+            <AdminLoginModal 
+              isOpen={true} 
+              onClose={() => navigate('/')} 
+              onLogin={() => { setIsAdminDashboardOpen(true); navigate('/'); }} 
+            />
+          </>
+        } />
         <Route path="/about" element={<LegalPage type="about" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
@@ -516,7 +512,7 @@ const App: React.FC = () => {
         onPlaceOrder={handlePlaceOrder} 
         currentUser={currentUser}
       />
-      <AdminLoginModal isOpen={isAdminLoginOpen} onClose={() => setIsAdminLoginOpen(false)} onLogin={() => setIsAdminDashboardOpen(true)} />
+      {/* AdminLoginModal managed by Route now */}
       {isAdminDashboardOpen && (
         <AdminDashboard 
           orders={orders} 
