@@ -64,6 +64,7 @@ const App: React.FC = () => {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [isVerifierOpen, setIsVerifierOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -107,6 +108,13 @@ const App: React.FC = () => {
     if (currentUser) localStorage.setItem('mh_current_user', JSON.stringify(currentUser));
     else localStorage.removeItem('mh_current_user');
   }, [currentUser]);
+
+  // Restored robust path checking for Admin Login
+  useEffect(() => {
+    if (location.pathname === '/adminjayu') {
+      setIsAdminLoginOpen(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -424,17 +432,8 @@ const App: React.FC = () => {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        {/* ADDED: Explicit route for adminjayu so it renders HomePage under the modal instead of 404/redirect */}
-        <Route path="/adminjayu" element={
-          <>
-            <HomePage />
-            <AdminLoginModal 
-              isOpen={true} 
-              onClose={() => navigate('/')} 
-              onLogin={() => { setIsAdminDashboardOpen(true); navigate('/'); }} 
-            />
-          </>
-        } />
+        {/* ADDED: Explicit route for adminjayu so it renders HomePage without 404, modal opens via useEffect */}
+        <Route path="/adminjayu" element={<HomePage />} />
         <Route path="/about" element={<LegalPage type="about" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
@@ -512,7 +511,13 @@ const App: React.FC = () => {
         onPlaceOrder={handlePlaceOrder} 
         currentUser={currentUser}
       />
-      {/* AdminLoginModal managed by Route now */}
+      
+      <AdminLoginModal 
+        isOpen={isAdminLoginOpen} 
+        onClose={() => { setIsAdminLoginOpen(false); navigate('/'); }} 
+        onLogin={() => { setIsAdminDashboardOpen(true); setIsAdminLoginOpen(false); navigate('/'); }} 
+      />
+
       {isAdminDashboardOpen && (
         <AdminDashboard 
           orders={orders} 

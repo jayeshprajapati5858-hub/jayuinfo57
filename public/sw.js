@@ -1,8 +1,8 @@
 
 const CACHE_NAME = 'mobilehub-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
+  './',
+  './index.html',
   '/manifest.json'
 ];
 
