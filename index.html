@@ -18,7 +18,7 @@
     
     <!-- PWA Setup -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
+    <meta name="theme-color" content="#3b82f6" />
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/644/644458.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -28,19 +28,22 @@
     <meta property="og:type" content="website" />
     <title>MobileHub - Chargers, Glass & Covers</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       window.process = { env: { NODE_ENV: 'production' } };
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
-            fontFamily: { sans: ['Outfit', 'sans-serif'] },
+            fontFamily: { 
+              sans: ['Outfit', 'sans-serif'],
+              display: ['Space Grotesk', 'sans-serif']
+            },
             colors: { 
-              primary: '#6366f1',   /* Indigo 500 - New Main Color */
-              secondary: '#a855f7', /* Purple 500 */
-              accent: '#ec4899',    /* Pink 500 - For Highlights */
-              darkbg: '#0f172a'     /* Slate 900 - Deep Dark Mode */
+              primary: '#3b82f6',   /* Bright Blue */
+              secondary: '#6366f1', /* Indigo */
+              accent: '#f43f5e',    /* Rose/Pink for CTA */
+              darkbg: '#0b0f19'     /* Deep Tech Black */
             },
             animation: { 'float': 'float 3s ease-in-out infinite', 'pulse-soft': 'pulse-soft 2s ease-in-out infinite', 'fadeInUp': 'fadeInUp 0.8s ease-out forwards', 'shimmer': 'shimmer 2.5s infinite linear' },
             keyframes: {
@@ -54,15 +57,23 @@
       }
     </script>
     <style>
-      body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f1f5f9; transition: background-color 0.3s ease, color 0.3s ease; }
-      .dark body { background-color: #0f172a; }
-      ::-webkit-scrollbar { width: 4px; }
+      body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f0f4f8; transition: background-color 0.3s ease, color 0.3s ease; }
+      .dark body { background-color: #0b0f19; }
+      
+      h1, h2, h3, h4, h5, h6, .font-display { font-family: 'Space Grotesk', sans-serif; }
+
+      ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
-      .dark ::-webkit-scrollbar-thumb { background: #475569; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      .dark ::-webkit-scrollbar-thumb { background: #334155; }
+      
       .loading-container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #ffffff; }
-      .dark .loading-container { background: #0f172a; }
-      .loader-logo { width: 80px; height: 80px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 24px; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: 900; margin-bottom: 24px; animation: float 2s infinite ease-in-out; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4); }
+      .dark .loading-container { background: #0b0f19; }
+      .loader-logo { width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6, #6366f1); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: 900; margin-bottom: 24px; animation: float 2s infinite ease-in-out; box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.5); }
+      
+      .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+      .dark .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+      
       .animate-fadeInUp { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
       .stagger-1 { animation-delay: 0.1s; }
       .stagger-2 { animation-delay: 0.2s; }
@@ -95,7 +106,7 @@
     <div id="root">
       <div class="loading-container">
         <div class="loader-logo">M</div>
-        <p style="font-weight: 900; color: #6366f1; letter-spacing: 0.1em;">MOBILEHUB</p>
+        <p style="font-weight: 700; color: #3b82f6; letter-spacing: 0.2em; font-family: 'Space Grotesk', sans-serif;">MOBILEHUB</p>
       </div>
     </div>
     <script type="module" src="/index.tsx"></script>
