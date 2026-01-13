@@ -48,16 +48,16 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
+    <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 transition-colors duration-300 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
           {/* Logo Section */}
           <div className="flex items-center gap-3 cursor-pointer group" onClick={handleLogoClick}>
-            <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-lg shadow-blue-500/20 text-white transform group-hover:scale-105 transition-transform duration-300">
+            <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg shadow-primary/25 text-white transform group-hover:scale-105 transition-transform duration-300">
               <Smartphone size={24} className="relative z-10 drop-shadow-md" />
               <Zap size={14} className="absolute top-1.5 right-1.5 text-yellow-300 fill-yellow-300 animate-pulse drop-shadow-sm" />
-              <ShieldCheck size={14} className="absolute bottom-1.5 left-1.5 text-green-300 fill-green-500/20 drop-shadow-sm" />
+              <ShieldCheck size={14} className="absolute bottom-1.5 left-1.5 text-cyan-300 fill-cyan-500/20 drop-shadow-sm" />
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black italic tracking-tighter text-gray-900 dark:text-white leading-none">
@@ -94,8 +94,6 @@ const Navbar: React.FC<NavbarProps> = ({
                <span className="text-xs font-bold text-gray-900 dark:text-white uppercase">{language}</span>
              </button>
 
-             {/* Admin Button REMOVED - Access via URL only */}
-
              <button onClick={onToggleDarkMode} className="p-3 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all">
                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
              </button>
@@ -107,7 +105,7 @@ const Navbar: React.FC<NavbarProps> = ({
                    <p className="text-[10px] text-gray-500 cursor-pointer hover:text-primary" onClick={onLogout}>Logout</p>
                  </div>
                  <div 
-                   className="w-10 h-10 bg-gradient-to-tr from-primary to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 cursor-pointer"
+                   className="w-10 h-10 bg-gradient-to-tr from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 cursor-pointer hover:shadow-primary/40 transition-shadow"
                    onClick={() => navigate('/profile')}
                  >
                     {currentUser.name[0]}
@@ -121,10 +119,10 @@ const Navbar: React.FC<NavbarProps> = ({
 
              <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
 
-             <button onClick={onWishlistClick} className="relative p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
+             <button onClick={onWishlistClick} className="relative p-3 text-gray-400 hover:text-accent hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
                 <Heart size={20} />
                 {wishlistItemCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full animate-ping"></span>
                 )}
              </button>
 
@@ -198,12 +196,10 @@ const Navbar: React.FC<NavbarProps> = ({
                     <span className="text-xs font-bold dark:text-white">Orders</span>
                  </button>
                  <button onClick={() => { onWishlistClick(); setIsMenuOpen(false); }} className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                    <Heart className="text-red-500" />
+                    <Heart className="text-accent" />
                     <span className="text-xs font-bold dark:text-white">Wishlist</span>
                  </button>
               </div>
-              
-              {/* Admin Button REMOVED from Mobile Menu - Access via URL only */}
            </div>
         </div>
       )}
