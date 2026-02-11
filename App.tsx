@@ -353,6 +353,13 @@ const App: React.FC = () => {
     setCart([]);
     return newOrder;
   };
+  
+  const checkConnection = async () => {
+    setServerStatus('checking');
+    const isHealthy = await api.checkHealth();
+    setServerStatus(isHealthy ? 'online' : 'offline');
+    showToast(isHealthy ? "Server is Online" : "Server is Offline");
+  };
 
   const filteredProducts = products
     .filter(p => selectedCategory === 'All' || p.category === selectedCategory)
@@ -532,6 +539,7 @@ const App: React.FC = () => {
           onAddCoupon={handleAddCoupon} 
           onDeleteCoupon={handleDeleteCoupon} 
           onAddReview={handleAddReview}
+          onCheckConnection={checkConnection}
           onClose={() => setIsAdminDashboardOpen(false)} 
         />
       )}

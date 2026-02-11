@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, Order, Category, Coupon, Review, User, Announcement } from '../types';
-import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server, Settings, Megaphone, Save, Eye, ExternalLink } from 'lucide-react';
+import { Plus, Package, Check, X, ArrowLeft, Printer, Trash2, Tag, Image as ImageIcon, Loader2, Star, MessageSquare, Users, Mail, Lock, Calendar, Server, Settings, Megaphone, Save, Eye, ExternalLink, Database, RefreshCw } from 'lucide-react';
 import { SHOP_NAME } from '../constants';
 import { api } from '../services/api';
+import { auth } from '../services/firebase';
 
 interface AdminDashboardProps {
   orders: Order[];
@@ -18,6 +19,7 @@ interface AdminDashboardProps {
   onAddCoupon: (coupon: Coupon) => void;
   onDeleteCoupon: (code: string) => void;
   onAddReview?: (productId: string, review: Review) => void;
+  onCheckConnection: () => Promise<void> | void;
   onClose: () => void;
 }
 
@@ -34,6 +36,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddCoupon,
   onDeleteCoupon,
   onAddReview,
+  onCheckConnection,
   onClose 
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'users' | 'settings'>('orders');
@@ -374,7 +377,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
         
-        {/* ... Rest of the tabs remain the same ... */}
         {activeTab === 'products' && (
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 md:p-8">
@@ -586,6 +588,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   {isSavingSettings ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
                   Save Settings
                </button>
+             </div>
+
+             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800">
+               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+                 <Database className="text-green-500" /> Firebase Connection Status
+               </h2>
+               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                   <div className="flex items-center justify-between mb-2">
+                       <span className="text-sm font-bold text-gray-500 uppercase">Status</span>
+                       <span className={`px-2 py-1 rounded text-xs font-bold ${serverStatus === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                           {serverStatus === 'online' ? 'Online & Connected' : 'Offline'}
+                       </span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                       <span className="text-sm font-bold text-gray-500 uppercase">Project ID</span>
+                       <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                           {auth.app.options.projectId || 'Unknown'}
+                       </span>
+                   </div>
+                   <button 
+                      onClick={onCheckConnection} 
+                      className="mt-4 w-full py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                   >
+                      <RefreshCw size={14} className={serverStatus === 'checking' ? 'animate-spin' : ''} />
+                      Test Connection Now
+                   </button>
+               </div>
              </div>
            </div>
         )}

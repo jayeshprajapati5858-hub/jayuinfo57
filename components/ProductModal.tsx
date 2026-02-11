@@ -61,18 +61,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, allProducts = [], 
   const hasMultipleImages = product.images && product.images.length > 1;
 
   const handleAddToCart = () => {
-      onAddToCart({ ...product, selectedColor: selectedColor }); 
+      onAddToCart({ ...product, selectedColor: selectedColor } as any); 
       onClose();
   };
 
   const handleBuyNow = () => {
-      onBuyNow({ ...product, selectedColor: selectedColor });
+      onBuyNow({ ...product, selectedColor: selectedColor } as any);
       onClose();
   };
   
   const handleAddCombo = () => {
     if (!comboProduct) return;
-    onAddToCart({ ...product, selectedColor });
+    onAddToCart({ ...product, selectedColor } as any);
     onAddToCart({ ...comboProduct }); // Standard add, logic handles separate items
     alert("Bundle added! 20% Discount applied in cart.");
     onClose();
@@ -209,7 +209,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, allProducts = [], 
                 <button disabled={isOutOfStock} onClick={handleAddToCart} className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 border-2 ${isOutOfStock ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-800 border-gray-900 dark:border-white text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                   <ShoppingCart size={20} /> {isOutOfStock ? 'No Stock' : 'Add to Cart'}
                 </button>
-                <button disabled={isOutOfStock} onClick={handleBuyNow} className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 shadow-xl ${isOutOfStock ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-900 dark:bg-primary text-white hover:scale-[1.02] active:scale-95 shadow-gray-200 dark:shadow-none italic uppercase tracking-widest'}`}>
+                <button disabled={isOutOfStock} onClick={handleBuyNow} className={`flex-1 py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 shadow-xl ${isOutOfStock ? 'bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-primary to-indigo-600 text-white hover:scale-[1.02] active:scale-95 shadow-primary/25 italic uppercase tracking-widest'}`}>
                   Buy Now <ArrowRight size={20} />
                 </button>
               </div>

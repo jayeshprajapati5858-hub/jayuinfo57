@@ -110,6 +110,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
     }, 2000);
   };
 
+  const shareOnWhatsApp = () => {
+    if (!lastOrder) return;
+    const text = `*New Order Placed - ${SHOP_NAME}*\n\nOrder ID: ${lastOrder.id}\nCustomer: ${lastOrder.customerName}\nItems: ${lastOrder.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}\nTotal: ₹${lastOrder.finalTotal}\nAddress: ${lastOrder.address}`;
+    const phoneNumber = "919876543210"; 
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   const handleClose = () => {
     setStep('summary');
     setShowInvoice(false);
@@ -146,13 +153,19 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, cartItem
                     <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-2">Thank You!</h2>
                     <p className="text-gray-500">Order #{lastOrder?.id.slice(-6).toUpperCase()} has been placed successfully.</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mt-8">
-                     <button onClick={() => setShowInvoice(true)} className="flex items-center justify-center gap-2 py-4 bg-gray-900 dark:bg-gray-800 text-white rounded-2xl font-bold hover:scale-105 transition-transform">
-                        <Smartphone size={18} /> View Invoice
-                     </button>
-                     <button onClick={handleClose} className="py-4 bg-primary text-white rounded-2xl font-bold hover:scale-105 transition-transform shadow-lg shadow-primary/30">
-                        Continue Shopping
-                     </button>
+                  
+                  <div className="grid grid-cols-1 gap-3 w-full max-w-md mt-8">
+                      <button onClick={shareOnWhatsApp} className="w-full flex items-center justify-center gap-2 py-4 bg-[#25D366] text-white rounded-2xl font-bold hover:scale-105 transition-transform shadow-lg shadow-green-500/30">
+                          <MessageCircle size={20} /> Send Order on WhatsApp
+                      </button>
+                      <div className="grid grid-cols-2 gap-3">
+                          <button onClick={() => setShowInvoice(true)} className="flex items-center justify-center gap-2 py-4 bg-gray-900 dark:bg-gray-800 text-white rounded-2xl font-bold hover:scale-105 transition-transform">
+                              <Smartphone size={18} /> Invoice
+                          </button>
+                          <button onClick={handleClose} className="py-4 bg-primary text-white rounded-2xl font-bold hover:scale-105 transition-transform shadow-lg shadow-primary/30">
+                              Continue
+                          </button>
+                      </div>
                   </div>
                </div>
              ) : (
