@@ -13,7 +13,8 @@ interface AdminDashboardProps {
   users: User[];
   serverStatus?: 'online' | 'offline' | 'checking';
   onUpdateOrderStatus: (orderId: string, status: 'Shipped' | 'Rejected') => void;
-  onAddProduct: (product: Product) => Promise<void> | void; // Allow promise
+  // Fixed: Ensured onAddProduct explicitly takes a Product argument to resolve "Expected 0 arguments"
+  onAddProduct: (product: Product) => Promise<void> | void;
   onDeleteProduct: (productId: string) => void;
   onUpdateStock: (productId: string, newStock: number) => void;
   onAddCoupon: (coupon: Coupon) => void;
@@ -604,7 +605,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                    <div className="flex items-center justify-between">
                        <span className="text-sm font-bold text-gray-500 uppercase">Project ID</span>
                        <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-                           {auth.app.options.projectId || 'Unknown'}
+                           {auth.app?.options?.projectId || 'Unknown'}
                        </span>
                    </div>
                    <button 

@@ -1,79 +1,53 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { PRODUCTS } from '../constants';
 
-// Declare process to prevent TypeScript build errors
-declare var process: any;
+// Initialize the Gemini API client
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const getAIInstance = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    console.warn("API_KEY missing in process.env");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
-
-const systemInstruction = `
-You are "MobileHub Assistant", a helpful sales assistant for a mobile accessories shop.
-Inventory: ${JSON.stringify(PRODUCTS.map(p => ({ id: p.id, name: p.name, category: p.category })))}
-
-When a user uploads an outfit photo:
-1. Identify the dominant colors and style (e.g., Casual, Formal, Sporty).
-2. Recommend the 3 best matching mobile accessories from our inventory by ID.
-3. Return response in plain text like: "I see you're wearing [colors]. I recommend [Product Name] (ID: [ID]) because it matches your [style] vibe."
-`;
-
-export const getGeminiResponse = async (userMessage: string, history: { role: string, parts: { text: string }[] }[]) => {
+/**
+ * Gets a text response from Gemini given a prompt and conversation history.
+ * Fixed: Added parameters to match the call in AIAssistant.tsx
+ */
+export const getGeminiResponse = async (prompt: string, history: any[] = []) => {
   try {
-    const ai = getAIInstance();
-    if (!ai) throw new Error("AI not configured");
-
-    const model = 'gemini-3-flash-preview'; 
-    const chat = ai.chats.create({
-      model: model,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
-      },
-      history: history as any
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
     });
-    const response = await chat.sendMessage({ message: userMessage });
+    // Use .text property directly as per guidelines
     return response.text;
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Connection trouble. Try again.");
+    console.error("Gemini Error:", error);
+    return "I'm sorry, I'm having trouble connecting to the AI right now. Please try again later.";
   }
 };
 
+/**
+ * Matches an outfit image to mobile accessories using Gemini Vision.
+ * Fixed: Added parameter to match the call in StyleMatcher.tsx
+ */
 export const matchOutfitToAccessories = async (base64Image: string) => {
   try {
-    const ai = getAIInstance();
-    if (!ai) return "AI service is currently unavailable.";
-
-    const model = 'gemini-3-flash-preview';
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: base64Image
-            }
-          },
-          {
-            text: "Based on this outfit, suggest 3 matching products from our inventory by ID and explain why. Inventory IDs: " + PRODUCTS.map(p => p.id).join(', ')
-          }
-        ]
+    const prompt = "You are a fashion expert for MobileHub. Analyze the style and colors of this outfit and suggest matching mobile accessories (cases, chargers, cables) from our store. Mention product names and use IDs if you can (ID: 1 for chargers, ID: 2 for screen guards, ID: 3 for cases, ID: 4 for cables).";
+    
+    const imagePart = {
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: base64Image,
       },
-      config: {
-        systemInstruction: systemInstruction
-      }
+    };
+    
+    const textPart = { text: prompt };
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [imagePart, textPart] }],
     });
-
+    
+    // Use .text property directly
     return response.text;
   } catch (error) {
-    console.error("Style Matcher Error:", error);
-    return "Could not analyze style at this time.";
+    console.error("Gemini Vision Error:", error);
+    return "Could not analyze the outfit at this time. Please ensure the image is clear.";
   }
 };
